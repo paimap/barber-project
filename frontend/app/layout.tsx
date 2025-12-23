@@ -1,4 +1,5 @@
 import "./globals.css";
+import Sidebar from '../components/navbar/index'
 
 export const metadata = {
   title: "My App",
@@ -12,7 +13,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <div className="layout-container">
+          <Sidebar />
+          <main className="content">
+            {children}
+          </main>
+        </div>
+      </body>
     </html>
   );
 }

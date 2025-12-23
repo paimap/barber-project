@@ -23,11 +23,15 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/profile", controllers.Profile)
 	}
 
-	admin := protected.Group("api/admin")
-	admin.Use(middleware.RequireRole(models.RoleSuperAdmin))
-	{
-		
-	}
+	// routes/routes.go
+mitra := protected.Group("api/mitra")
+mitra.Use(middleware.RequireRole(models.RoleMitra))
+{
+	mitra.POST("/outlets", controllers.CreateOutlet)
+	mitra.GET("/outlets", controllers.GetOutlets)
+	mitra.PUT("/outlets/:id", controllers.UpdateOutlet)
+	mitra.DELETE("/outlets/:id", controllers.DeleteOutlet)
+}
 
 	
 }

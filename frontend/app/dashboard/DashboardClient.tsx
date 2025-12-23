@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./Dashboard.module.css";
+import { LayoutDashboard, Handshake, ShoppingCart, AlignEndHorizontal, LogOut } from "lucide-react";
 
 type Props = {
   user: {
@@ -26,16 +27,13 @@ export default function DashboardClient({ user }: Props) {
 
   return (
     <div>
-        <div className={styles.ujang}>
-
-        </div>
         <h1>Welcome, {user.email}</h1>
         <p>Counter: {count}</p>
         <button onClick={() => setCount(count + 1)}>Increment</button>
         <br />
-        <button onClick={handleLogout} style={{ marginTop: "10px" }}>
+        {/* <button onClick={handleLogout} style={{ marginTop: "10px" }}>
           Logout
-        </button>
+        </button> */}
     </div>
   );
 }

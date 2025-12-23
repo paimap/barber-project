@@ -1,3 +1,27 @@
+/* Import font modern */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 * {
-    margin:0px;
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Inter', sans-serif;
+  background-color: #f8fafc; 
+  color: #1e293b;
+}
+
+.layout-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.content {
+  flex: 1;
+  padding: 40px;
+  overflow-y: auto;
+  max-width: 1200px; 
 }
