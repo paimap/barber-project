@@ -20,7 +20,18 @@ func main() {
 	config.ConnectDatabase()
 
 	// Auto migrate
-	config.DB.AutoMigrate(&models.User{})
+	config.DB.AutoMigrate(
+		&models.User{},
+		&models.SuperAdmin{},
+		&models.Mitra{},
+		&models.Barber{},
+		&models.Outlet{},
+		&models.MainInventory{},
+		&models.Product{},
+		&models.ProductSales{},
+		&models.Service{},
+	)
+	
 
 	r := gin.Default()
 	routes.SetupRoutes(r)

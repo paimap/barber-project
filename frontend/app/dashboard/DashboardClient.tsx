@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import styles from "./Dashboard.module.css";
 
 type Props = {
   user: {
@@ -25,8 +26,8 @@ export default function DashboardClient({ user }: Props) {
 
   return (
     <div>
-        <div>
-            
+        <div className={styles.ujang}>
+
         </div>
         <h1>Welcome, {user.email}</h1>
         <p>Counter: {count}</p>

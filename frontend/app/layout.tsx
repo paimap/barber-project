@@ -1,3 +1,5 @@
+import "./globals.css";
+
 export const metadata = {
   title: "My App",
   description: "Next.js App Router Example",

@@ -4,28 +4,31 @@ import (
 	"os"
 	"time"
 
+	"backend/models"
+	
 	"github.com/golang-jwt/jwt/v5"
 )
 
 type JwtCustomClaims struct {
-	UserID uint   `json:"user_id"`
-	Email  string `json:"email"`
-	jwt.RegisteredClaims
+    UserID uint   `json:"user_id"`
+    Email  string `json:"email"`
+    Role   string `json:"role"`
+    jwt.RegisteredClaims
 }
 
-func GenerateToken(userID uint, email string) (string, error) {
-	claims := JwtCustomClaims{
-		UserID: userID,
-		Email:  email,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-		},
-	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+func GenerateToken(user models.User) (string, error) {
+    claims := JwtCustomClaims{
+        UserID: user.ID,
+        Email:  user.Email,
+        Role:   user.Role,
+        RegisteredClaims: jwt.RegisteredClaims{
+            ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+            IssuedAt:  jwt.NewNumericDate(time.Now()),
+        },
+    }
 
-	secret := []byte(os.Getenv("JWT_SECRET"))
-
-	return token.SignedString(secret)
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    return token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 }
+

@@ -55,6 +55,8 @@ func JwtAuthMiddleware() gin.HandlerFunc {
 		}
 		c.Set("user_id", claims.UserID)
 		c.Set("email", claims.Email)
+		c.Set("role", claims.Role)
+
 		c.Next()
 	}
 }

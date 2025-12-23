@@ -4,6 +4,8 @@ import (
 	"backend/controllers"
 	"backend/middleware"
 
+	"backend/models"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,5 +22,13 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		protected.GET("/profile", controllers.Profile)
 	}
+
+	admin := protected.Group("api/admin")
+	admin.Use(middleware.RequireRole(models.RoleSuperAdmin))
+	{
+		
+	}
+
+	
 }
 
