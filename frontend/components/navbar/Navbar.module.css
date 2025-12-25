@@ -30,11 +30,14 @@
     gap: 12px;
     padding: 12px;
     border-radius: 8px;
-    color: #94a3b8;
-    text-decoration: none;
+    color: #94a3b8; 
+    text-decoration: none; 
     font-weight: 500;
     transition: all 0.2s;
     cursor: pointer;
+    background: transparent;
+    border: none;
+    width: 100%;
   }
   
   .item:hover {
@@ -43,12 +46,40 @@
   }
   
   .active {
-    background: #334155;
-    color: #38bdf8;
+    background: #334155; 
+    color: #38bdf8;     
   }
   
-  .logout {
-    margin-top: auto;
-    padding-top: 16px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-  }
+.logout {
+  margin-top: auto; 
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08); 
+}
+
+.logoutButton {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #94a3b8; 
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logoutButton:hover {
+  background: rgba(239, 68, 68, 0.1); 
+  color: #ef4444; 
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.logoutButton:hover svg {
+  transform: translateX(3px);
+  transition: transform 0.2s ease;
+}

@@ -1,0 +1,34 @@
+.card {
+    background: white;
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  }
+  
+  .iconBox {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    color: #0f172a;
+  }
+  
+  .label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+    display: block;
+  }
+  
+  .value {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+  }

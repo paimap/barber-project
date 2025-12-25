@@ -1,0 +1,53 @@
+.pageWrapper {
+    padding: 24px;
+    background-color: #f8fafc;
+    min-height: 100vh;
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+  }
+  
+  .header h1 {
+    font-size: 26px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+  
+  .filterGroup {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: white;
+    padding: 10px 16px;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  }
+  
+  .filterGroup span {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+  }
+  
+  .dateInput {
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+    outline: none;
+  }
+  
+  .boardGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+  
+  @media (max-width: 1024px) {
+    .boardGrid { grid-template-columns: 1fr; }
+  }

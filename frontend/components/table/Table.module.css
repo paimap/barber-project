@@ -1,0 +1,54 @@
+.tableContainer {
+    width: 100%;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+  
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  
+  .table th {
+    padding: 16px 20px;
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  
+  .table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  
+  .actionGroup {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  
+  .btnUpdate, .btnDelete, .btnDetail {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: 0.2s;
+  }
+  
+  .btnUpdate { background: #eff6ff; color: #2563eb; }
+  .btnUpdate:hover { background: #2563eb; color: white; }
+  
+  .btnDelete { background: #fef2f2; color: #dc2626; }
+  .btnDelete:hover { background: #dc2626; color: white; }
+  
+  .btnDetail { background: #f8fafc; color: #0f172a; border-color: #e2e8f0; }
+  .btnDetail:hover { background: #0f172a; color: white; }
