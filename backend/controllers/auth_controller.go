@@ -33,12 +33,16 @@ func Register(c *gin.Context) {
         return
     }
 
-    hashedPassword, _ := bcrypt.GenerateFromPassword(
+    hashedPassword, err := bcrypt.GenerateFromPassword(
         []byte(input.Password),
         bcrypt.DefaultCost,
     )
+    if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
+		return
+	}
 
-    err := config.DB.Transaction(func(tx *gorm.DB) error {
+    err = config.DB.Transaction(func(tx *gorm.DB) error {
         user := models.User{
             Email:    input.Email,
             Password: string(hashedPassword),

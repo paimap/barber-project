@@ -4,7 +4,7 @@ import { NextResponse, NextRequest } from "next/server";
 export function proxy(request: NextRequest) {
   const token = request.cookies.get("access_token")?.value;
 
-  if (request.nextUrl.pathname.startsWith("/leaderboard") && !token) {
+  if (request.nextUrl.pathname.startsWith("/dashboard") && !token) {
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
   }
