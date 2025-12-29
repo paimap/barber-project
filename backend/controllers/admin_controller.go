@@ -2,25 +2,42 @@ package controllers
 
 import (
 	"net/http"
-	"gorm.io/gorm"
 	"strconv"
+	"time"
 
-	"backend/models"
+	"gorm.io/gorm"
+
 	"backend/config"
-	
+	"backend/models"
+
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func GetAllMitra(c *gin.Context){
-	var mitra []models.Mitra
-	if err := config.DB.Find(&mitra).Error; err != nil{
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
 
-	c.JSON(http.StatusOK, gin.H{"mitra": mitra})
+type MitraResponse struct {
+    ID          uint      `json:"id"`
+    Name        string    `json:"name"`
+    PhoneNumber string    `json:"phone_number"`
+    CreatedAt   time.Time `json:"created_at"`
+    OutletCount int64     `json:"outlet_count"`
 }
+
+
+func GetAllMitra(c *gin.Context){
+    var result []MitraResponse
+    if err := config.DB.Model(&models.Mitra{}).
+        Select("mitras.id, mitras.name, mitras.phone_number, mitras.created_at, COUNT(outlets.id) as outlet_count").
+        Joins("LEFT JOIN outlets ON outlets.mitra_id = mitras.id").
+        Group("mitras.id").
+        Scan(&result).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"mitra": result})
+}
+
 
 func CreateMitra(c *gin.Context) {
 	var input struct {

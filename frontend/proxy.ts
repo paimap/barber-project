@@ -2,25 +2,28 @@
 import { NextResponse, NextRequest } from "next/server";
 
 export function proxy(request: NextRequest) {
-  const token = request.cookies.get("access_token")?.value;
+  const token = request.cookies.get('access_token')?.value;
+  const { pathname } = request.nextUrl;
 
-  if (request.nextUrl.pathname.startsWith("/dashboard") && !token) {
-    const loginUrl = new URL("/login", request.url);
-    return NextResponse.redirect(loginUrl);
+  // 1. Jika TIDAK ada token dan mencoba akses selain halaman login
+  if (!token && pathname !== '/login') {
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  if (
-    (request.nextUrl.pathname === "/" ||
-     request.nextUrl.pathname === "/login") &&
-    token
-  ) {
-    const dashboardUrl = new URL("/dashboard", request.url);
-    return NextResponse.redirect(dashboardUrl);
+  // 2. Jika ADA token dan mencoba akses halaman login
+  if (token && pathname === '/login') {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
+  // 3. Redirect halaman utama "/" ke dashboard jika sudah login, atau login jika belum
+  if (pathname === '/') {
+    if (token) return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/", "/login"],
+  matcher: ["/dashboard/:path*", "/"],
 };

@@ -1,25 +1,24 @@
 import "./globals.css";
-import Sidebar from '../components/navbar/index'
+import Sidebar from '../components/navbar/index';
+import { cookies } from "next/headers";
+import { AuthProvider } from "@/context/AuthContext";
 
-export const metadata = {
-  title: "My App",
-  description: "Next.js App Router Example",
-};
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("access_token")?.value;
+  const isLoggedIn = Boolean(token);
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
   return (
     <html lang="en">
       <body>
-        <div className="layout-container">
-          <Sidebar />
-          <main className="content">
-            {children}
-          </main>
-        </div>
+        <AuthProvider>
+          <div className="layout-container">
+            {isLoggedIn && <Sidebar />}
+            <main className={`content ${isLoggedIn ? 'content-with-sidebar' : 'content-full'}`}>
+              {children}
+            </main>
+          </div>
+        </AuthProvider>
       </body>
     </html>
   );

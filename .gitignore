@@ -58,6 +58,8 @@ go.work.sum
 # Vendor
 vendor/
 
+backend/.env*
+
 
 # =====================================
 # GENERAL

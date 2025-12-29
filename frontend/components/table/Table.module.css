@@ -47,8 +47,23 @@
   .btnUpdate { background: #eff6ff; color: #2563eb; }
   .btnUpdate:hover { background: #2563eb; color: white; }
   
-  .btnDelete { background: #fef2f2; color: #dc2626; }
-  .btnDelete:hover { background: #dc2626; color: white; }
+
   
   .btnDetail { background: #f8fafc; color: #0f172a; border-color: #e2e8f0; }
   .btnDetail:hover { background: #0f172a; color: white; }
+
+.btnDelete {
+  background-color: transparent;
+  color: #ef4444;
+  border: 1px solid #ef4444;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.btnDelete:hover {
+  background-color: #ef4444;
+  color: white;
+}

@@ -1,7 +1,6 @@
 /* Import font modern */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-
 * {
   box-sizing: border-box;
   margin: 0;
@@ -18,11 +17,25 @@ html, body {
 .layout-container {
   display: flex;
   min-height: 100vh;
+  width: 100%;
 }
 
 .content {
   padding: 25px;
   flex: 1;
-  overflow-y: auto;
-  
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease; 
 }
+
+.content-with-sidebar {
+  background-color: #f8fafc;
+}
+
+.content-full {
+  width: 100%;
+  max-width: 1200px; 
+  margin: 0 auto;   
+  background-color: #ffffff;
+}
+

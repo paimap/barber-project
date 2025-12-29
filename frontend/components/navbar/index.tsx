@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import styles from './Navbar.module.css'
 import {
   LayoutDashboard,
@@ -12,10 +12,25 @@ import {
 } from 'lucide-react'
 
 export default function Sidebar() {
-  const pathname = usePathname() 
+  const pathname = usePathname()
+  const router = useRouter()
 
-  const handleLogout = () => {
-    console.log("Logging out...")
+  const handleLogout = async () => {
+    try {
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (res.ok) {
+        window.location.href = "/login";
+      } else {
+        alert("Logout gagal - Silakan coba lagi");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Terjadi kesalahan saat logout");
+    }
   }
 
   const menuItems = [
@@ -31,9 +46,7 @@ export default function Sidebar() {
 
       <nav className={styles.menu}>
         {menuItems.map((item) => {
-          // Cek apakah menu ini sedang aktif
           const isActive = pathname === item.href
-
           return (
             <Link 
               key={item.href} 

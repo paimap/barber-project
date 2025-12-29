@@ -1,0 +1,76 @@
+/* components/forms/Form.module.css */
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .inputGroup label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569; /* Slate 600 */
+  }
+  
+  .inputGroup input {
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0; /* Slate 200 */
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    background-color: #ffffff;
+  }
+  
+  .inputGroup input:focus {
+    outline: none;
+    border-color: #3b82f6; /* Blue 500 */
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  .inputGroup input::placeholder {
+    color: #94a3b8; /* Slate 400 */
+  }
+  
+  /* Bagian bawah form untuk tombol */
+  .footer {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .btnPrimary {
+    background-color: #1e293b; /* Slate 800 */
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    width: 100%; /* Tombol full width di mobile, atau hapus jika ingin auto */
+  }
+  
+  .btnPrimary:hover {
+    background-color: #0f172a; /* Slate 900 */
+  }
+  
+  .btnPrimary:disabled {
+    background-color: #94a3b8;
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+  
+  /* Error message styling (jika nanti kamu butuh) */
+  .errorMessage {
+    font-size: 13px;
+    color: #ef4444;
+    margin-top: 4px;
+  }
