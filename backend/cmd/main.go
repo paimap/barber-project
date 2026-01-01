@@ -25,12 +25,23 @@ func main() {
 		&models.SuperAdmin{},
 		&models.Mitra{},
 		&models.Barber{},
-		&models.Outlet{},
+
 		&models.MainInventory{},
+		&models.Product_MainInventory{},
+
+		&models.Outlet{},
+		&models.OutletInventory{},
+		&models.Product_OutletInventory{},
+
 		&models.Product{},
 		&models.ProductSales{},
+		&models.Product_ProductSales{},
+
 		&models.Service{},
+		&models.ServiceType{},          // ← INI YANG KURANG
+		&models.Service_ServiceType{},  // ← junction table
 	)
+
 	
 
 	r := gin.Default()

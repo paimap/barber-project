@@ -22,6 +22,7 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		protected.GET("/profile", controllers.Profile)
 		protected.GET("/products", controllers.GetAllProduct)
+		protected.GET("/service-type", controllers.GetAllServiceType)
 		
 	}
 
@@ -46,6 +47,10 @@ func SetupRoutes(r *gin.Engine) {
 		admin.POST("/products", controllers.CreateProduct)
 		admin.PUT("/products/:id", controllers.UpdateProduct)
 		admin.DELETE("/products/:id", controllers.DeleteProduct)
+
+		admin.POST("/service-type", controllers.CreateServiceType)
+		admin.PUT("/service-type/:id", controllers.UpdateServiceType)
+		admin.DELETE("/service-type/:id", controllers.DeleteServiceType)
 	}
 	
 }
