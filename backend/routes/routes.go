@@ -21,6 +21,8 @@ func SetupRoutes(r *gin.Engine) {
 	protected.Use(middleware.JwtAuthMiddleware())
 	{
 		protected.GET("/profile", controllers.Profile)
+		protected.GET("/products", controllers.GetAllProduct)
+		
 	}
 
 	// routes/routes.go
@@ -40,6 +42,10 @@ func SetupRoutes(r *gin.Engine) {
 		admin.POST("/mitra", controllers.CreateMitra)
 		admin.PUT("/mitra/:id", controllers.UpdateMitra)
 		admin.DELETE("/mitra/:id", controllers.DeleteMitra)
+
+		admin.POST("/products", controllers.CreateProduct)
+		admin.PUT("/products/:id", controllers.UpdateProduct)
+		admin.DELETE("/products/:id", controllers.DeleteProduct)
 	}
 	
 }

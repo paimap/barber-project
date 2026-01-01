@@ -1,15 +1,15 @@
 'use client'
 
 import { useState } from 'react';
-import DeleteConfirm from '@/components/forms/DeleteConfirm';
+import DeleteConfirm from '@/components/forms/mitra/DeleteConfirm';
 import { useRouter } from 'next/navigation';
 import Table from '@/components/table/Table';
 import styles from './Mitra.module.css';
 import { Plus } from 'lucide-react';
 import { MitraClientProps } from './types';
 import Modal from '@/components/modal/Modal';
-import MitraForm from '@/components/forms/MitraForm';
-import MitraUpdateForm from '@/components/forms/MitraUpdateForm';
+import MitraForm from '@/components/forms/mitra/MitraForm';
+import MitraUpdateForm from '@/components/forms/mitra/MitraUpdateForm';
 
 export default function MitraClient({ mitraData }: MitraClientProps) {
   const [showModal, setShowModal] = useState(false);
@@ -39,7 +39,6 @@ export default function MitraClient({ mitraData }: MitraClientProps) {
   };
 
   const handleOpenDelete = (id: any) => {
-    // Cari data mitra berdasarkan ID agar nama muncul di modal
     const mitra = mitraData.find((m) => m.id === id);
     if (mitra) {
       setSelectedMitra({ id: mitra.id, name: mitra.name });

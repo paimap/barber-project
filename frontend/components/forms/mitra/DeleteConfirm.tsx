@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react';
-import styles from './Form.module.css';
+import styles from '@/components/forms/Form.module.css';
 
 interface DeleteConfirmProps {
   id: string | number;

@@ -24,18 +24,20 @@ type MitraResponse struct {
 }
 
 
-func GetAllMitra(c *gin.Context){
-    var result []MitraResponse
-    if err := config.DB.Model(&models.Mitra{}).
-        Select("mitras.id, mitras.name, mitras.phone_number, mitras.created_at, COUNT(outlets.id) as outlet_count").
-        Joins("LEFT JOIN outlets ON outlets.mitra_id = mitras.id").
-        Group("mitras.id").
-        Scan(&result).Error; err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-        return
-    }
+func GetAllMitra(c *gin.Context) {
+	result := []MitraResponse{}
 
-    c.JSON(http.StatusOK, gin.H{"mitra": result})
+	if err := config.DB.Model(&models.Mitra{}).
+		Select("mitras.id, mitras.name, mitras.phone_number, mitras.created_at, COUNT(outlets.id) as outlet_count").
+		Joins("LEFT JOIN outlets ON outlets.mitra_id = mitras.id").
+		Group("mitras.id").
+		Scan(&result).Error; err != nil {
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"mitra": result})
 }
 
 
@@ -139,7 +141,6 @@ func UpdateMitra(c *gin.Context) {
 		return
 	}
 
-	// ambil data terbaru
 	config.DB.First(&mitra, mitra.ID)
 
 	c.JSON(http.StatusOK, gin.H{"mitra": mitra})
