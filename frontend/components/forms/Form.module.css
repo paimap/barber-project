@@ -18,14 +18,17 @@
     color: #475569; /* Slate 600 */
   }
   
-  .inputGroup input {
+  .inputGroup input,
+  .inputGroup select {
     padding: 10px 14px;
-    border: 1px solid #e2e8f0; /* Slate 200 */
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
     font-size: 15px;
     font-family: inherit;
     transition: all 0.2s ease;
     background-color: #ffffff;
+    width: 100%;
+    appearance: none; /* Menghapus panah default browser */
   }
   
   .inputGroup input:focus {
@@ -36,6 +39,15 @@
   
   .inputGroup input::placeholder {
     color: #94a3b8; /* Slate 400 */
+  }
+
+  .inputGroup select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px;
+    cursor: pointer;
   }
   
   /* Bagian bawah form untuk tombol */
@@ -95,4 +107,11 @@
     height: 40px;
     border: 1px solid #ddd;
     border-radius: 6px;
+  }
+
+  .inputGroup input:focus,
+  .inputGroup select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }

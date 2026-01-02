@@ -56,7 +56,7 @@ type MainInventory struct {
 type Product_MainInventory struct {
 	gorm.Model
 
-	ProductID uint `gorm:"not null"`
+	ProductID uint `gorm:"not null;constraint:OnDelete:CASCADE"`
 	Product Product
 
 	MainInventoryID uint `gorm:"not null"`
@@ -90,7 +90,7 @@ type Product_OutletInventory struct {
 	gorm.Model
 	Quantity int64
 
-	ProductID uint `gorm:"not null"`
+	ProductID uint `gorm:"not null;constraint:OnDelete:CASCADE"`
 	Product Product
 
 	OutletInventoryID uint `gorm:"not null"`

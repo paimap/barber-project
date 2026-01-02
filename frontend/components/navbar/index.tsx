@@ -9,11 +9,16 @@ import {
   ShoppingCart,
   AlignEndHorizontal,
   LogOut,
+  Box,
 } from 'lucide-react'
+
+
+
 
 export default function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
+
 
   const handleLogout = async () => {
     try {
@@ -33,11 +38,12 @@ export default function Sidebar() {
     }
   }
 
+
   const menuItems = [
     { name: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard size={18} /> },
     { name: 'Mitra', href: '/mitra', icon: <Handshake size={18} /> },
     { name: 'Service & Product', href: '/services', icon: <ShoppingCart size={18} /> },
-    { name: 'Leaderboard', href: '/leaderboard', icon: <AlignEndHorizontal size={18} /> },
+    { name: 'Stock Management', href: '/stock', icon: <Box size={18} /> },
   ]
 
   return (

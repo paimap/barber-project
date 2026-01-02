@@ -51,6 +51,11 @@ func SetupRoutes(r *gin.Engine) {
 		admin.POST("/service-type", controllers.CreateServiceType)
 		admin.PUT("/service-type/:id", controllers.UpdateServiceType)
 		admin.DELETE("/service-type/:id", controllers.DeleteServiceType)
+
+		admin.PUT("/inventory", controllers.UpsertMainInventoryItem)
+		admin.GET("/inventory", controllers.GetMainInventory)
+		admin.PUT("/inventory/:product_id", controllers.UpdateMainInventoryStock)
+		admin.DELETE("/inventory/:product_id", controllers.DeleteProductFromMainInventory)
 	}
 	
 }
