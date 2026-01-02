@@ -170,6 +170,7 @@ func GetMainInventory(c *gin.Context) {
 		`).
 		Joins("JOIN products ON products.id = product_main_inventories.product_id").
 		Where("product_main_inventories.deleted_at IS NULL").
+		Where("products.deleted_at IS NULL").
 		Scan(&result).Error
 
 	if err != nil {
