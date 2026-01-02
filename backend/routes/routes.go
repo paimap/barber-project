@@ -23,7 +23,7 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/profile", controllers.Profile)
 		protected.GET("/products", controllers.GetAllProduct)
 		protected.GET("/service-type", controllers.GetAllServiceType)
-		
+
 	}
 
 	// routes/routes.go
@@ -34,6 +34,12 @@ func SetupRoutes(r *gin.Engine) {
 		mitra.GET("/outlets", controllers.GetOutlets)
 		mitra.PUT("/outlets/:id", controllers.UpdateOutlet)
 		mitra.DELETE("/outlets/:id", controllers.DeleteOutlet)
+
+		mitra.POST("/barber", controllers.CreateBarber)
+		mitra.GET("/barber", controllers.GetBarberByMitra)
+		mitra.PUT("/barber/:id", controllers.UpdateBarber)
+		mitra.DELETE("/barber/:id", controllers.DeleteBarber)
+		mitra.POST("/barber/:id/assign", controllers.AssignBarberToOutlet)
 	}
 
 	admin := protected.Group("/admin")
@@ -57,6 +63,5 @@ func SetupRoutes(r *gin.Engine) {
 		admin.PUT("/inventory/:product_id", controllers.UpdateMainInventoryStock)
 		admin.DELETE("/inventory/:product_id", controllers.DeleteProductFromMainInventory)
 	}
-	
-}
 
+}

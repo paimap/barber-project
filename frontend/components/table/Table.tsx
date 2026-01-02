@@ -7,12 +7,19 @@ interface Header {
   align?: 'left' | 'right' | 'center';
 }
 
+interface CustomAction {
+  label: string;
+  icon?: React.ReactNode;
+  onClick: (id: any) => void;
+}
+
 interface TableProps {
   headers: Header[];
   data: any[];
   onUpdate?: (id: any) => void;
   onDelete?: (id: any) => void;
   onDetail?: (id: any) => void;
+  customActions?: CustomAction[];
   renderCustomCell?: (key: string, value: any, item: any) => React.ReactNode;
 }
 
@@ -22,6 +29,7 @@ export default function Table({
   onUpdate, 
   onDelete, 
   onDetail,
+  customActions,
   renderCustomCell 
 }: TableProps) {
   return (
@@ -34,7 +42,7 @@ export default function Table({
                 {header.label}
               </th>
             ))}
-            {(onUpdate || onDelete || onDetail) && (
+            {(onUpdate || onDelete || onDetail || customActions) && (
               <th style={{ textAlign: 'right' }}>Actions</th>
             )}
           </tr>
@@ -49,7 +57,7 @@ export default function Table({
                     : item[header.key]}
                 </td>
               ))}
-              {(onUpdate || onDelete || onDetail) && (
+              {(onUpdate || onDelete || onDetail || customActions) && (
                 <td style={{ textAlign: 'right' }}>
                   <div className={styles.actionGroup}>
                     {onDetail && (
@@ -61,6 +69,16 @@ export default function Table({
                     {onDelete && (
                       <button className={styles.btnDelete} onClick={() => onDelete(item.id)}>Delete</button>
                     )}
+                    {customActions && customActions.map((action, idx) => (
+                      <button 
+                        key={idx}
+                        className={styles.btnCustom}
+                        onClick={() => action.onClick(item.id)}
+                        title={action.label}
+                      >
+                        {action.icon || action.label}
+                      </button>
+                    ))}
                   </div>
                 </td>
               )}

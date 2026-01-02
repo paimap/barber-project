@@ -36,6 +36,7 @@ type Mitra struct {
 	PhoneNumber string `gorm:"type:varchar(20);index"`
 
 	Outlets []Outlet
+	Barbers []Barber
 }
 
 type Barber struct {
@@ -43,6 +44,12 @@ type Barber struct {
 	Name string
 	UserID uint `gorm:"uniqueIndex;not null"`
 	PhoneNumber string `gorm:"type:varchar(20);index"`
+
+	MitraID uint `gorm:"not null"`
+	Mitra Mitra
+
+	OutletID uint  `gorm:"default:null"`
+	Outlet Outlet `gorm:"foreignKey:OutletID;references:ID"`
 
 	Services []Service
 }

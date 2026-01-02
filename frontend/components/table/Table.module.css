@@ -67,3 +67,23 @@
   background-color: #ef4444;
   color: white;
 }
+
+.btnCustom {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: #f0f9ff;
+  color: #0369a1;
+  transition: 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btnCustom:hover {
+  background: #0369a1;
+  color: white;
+}
