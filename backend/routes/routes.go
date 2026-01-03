@@ -40,6 +40,11 @@ func SetupRoutes(r *gin.Engine) {
 		mitra.PUT("/barber/:id", controllers.UpdateBarber)
 		mitra.DELETE("/barber/:id", controllers.DeleteBarber)
 		mitra.POST("/barber/:id/assign", controllers.AssignBarberToOutlet)
+
+		mitra.PUT("/inventory", controllers.UpsertOutletInventoryItem)
+		mitra.GET("/inventory", controllers.GetOutletInventory)
+		mitra.PUT("/inventory/:product_id", controllers.UpdateOutletInventoryStock)
+		mitra.DELETE("/inventory/:product_id", controllers.DeleteProductFromOutletInventory)
 	}
 
 	admin := protected.Group("/admin")

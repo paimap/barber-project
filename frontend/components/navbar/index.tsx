@@ -64,7 +64,7 @@ export default function Sidebar() {
         { name: 'Outlets', href: '/outlets', icon: <Handshake size={18} /> },
         { name: 'Barbers', href: '/barbers', icon: <ShoppingCart size={18} /> },
         { name: 'Service & Product', href: '/services', icon: <ShoppingCart size={18} /> },
-        { name: 'Stock Management', href: '/stock', icon: <Box size={18} /> },
+        { name: 'Stock Management', href: '/stock-outlet', icon: <Box size={18} /> },
       ]
     } else if (userRole === 'BARBER') {
       return [

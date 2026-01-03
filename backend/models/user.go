@@ -87,8 +87,8 @@ type Outlet struct {
 type OutletInventory struct {
 	gorm.Model 
 
-	OutletID uint `gorm:"not null"`
-	Outlet Outlet
+	OutletID uint `gorm:"default:null"`
+	Outlet Outlet `gorm:"foreignKey:OutletID;references:ID"`
 	
 	Products []Product_OutletInventory
 }
