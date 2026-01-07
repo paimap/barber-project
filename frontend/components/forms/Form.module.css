@@ -4,22 +4,24 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
-  }
+}
   
-  .inputGroup {
+.inputGroup {
     display: flex;
     flex-direction: column;
     gap: 8px;
-  }
+}
   
-  .inputGroup label {
+.inputGroup label, .labelTitle {
     font-size: 14px;
     font-weight: 600;
     color: #475569; /* Slate 600 */
-  }
+}
   
-  .inputGroup input,
-  .inputGroup select {
+.inputGroup input,
+.inputGroup select,
+.input,
+.selectInput {
     padding: 10px 14px;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
@@ -29,35 +31,154 @@
     background-color: #ffffff;
     width: 100%;
     appearance: none; /* Menghapus panah default browser */
-  }
+}
   
-  .inputGroup input:focus {
+.inputGroup input:focus,
+.inputGroup select:focus,
+.input:focus,
+.selectInput:focus {
     outline: none;
     border-color: #3b82f6; /* Blue 500 */
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
+}
   
-  .inputGroup input::placeholder {
+.inputGroup input::placeholder {
     color: #94a3b8; /* Slate 400 */
-  }
+}
 
-  .inputGroup select {
+/* --- Dropdown Styling --- */
+.inputGroup select, .selectInput {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 12px center;
     background-size: 16px;
     padding-right: 40px;
     cursor: pointer;
-  }
+}
+
+.selectWrapper {
+    position: relative;
+    width: 100%;
+}
+
+/* --- Service Card / Checkbox List Section --- */
+.checkboxContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.checkboxContainer::-webkit-scrollbar {
+    width: 6px;
+}
+
+.checkboxContainer::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+
+.serviceCard {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: #fff;
+}
+
+.serviceCard:hover {
+    border-color: #3b82f6;
+    background-color: #f8fafc;
+}
+
+.selectedCard {
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+    box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.checkboxWrapper {
+    margin-right: 16px;
+    display: flex;
+    align-items: center;
+}
+
+.realCheckbox {
+    width: 18px;
+    height: 18px;
+    accent-color: #1e293b;
+    pointer-events: none;
+}
+
+.serviceInfo {
+    display: flex;
+    flex-direction: column;
+}
+
+.serviceName {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 14px;
+}
+
+.servicePrice {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* --- Total & Info Box --- */
+.totalSection {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background-color: #f1f5f9;
+    border-radius: 10px;
+    margin-top: 5px;
+    border: 1px dashed #cbd5e1;
+}
+
+.totalLabel {
+    font-weight: 600;
+    color: #64748b;
+    font-size: 13px;
+    text-transform: uppercase;
+}
+
+.totalAmount {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.infoBox {
+    background-color: #f8fafc;
+    padding: 16px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    font-size: 14px;
+    color: #475569;
+    line-height: 1.6;
+    margin-bottom: 5px;
+}
+
+.infoBox strong {
+    color: #1e293b;
+}
   
-  /* Bagian bawah form untuk tombol */
-  .footer {
+/* --- Footer & Buttons --- */
+.footer {
     margin-top: 10px;
     display: flex;
     justify-content: flex-end;
-  }
+}
   
-  .btnPrimary {
+.btnPrimary {
     background-color: #1e293b; /* Slate 800 */
     color: white;
     padding: 12px 24px;
@@ -67,51 +188,66 @@
     border: none;
     cursor: pointer;
     transition: background-color 0.2s ease;
-    width: 100%; /* Tombol full width di mobile, atau hapus jika ingin auto */
-  }
+    width: 100%; 
+}
   
-  .btnPrimary:hover {
+.btnPrimary:hover {
     background-color: #0f172a; /* Slate 900 */
-  }
+}
   
-  .btnPrimary:disabled {
+.btnPrimary:disabled {
     background-color: #94a3b8;
     cursor: not-allowed;
     opacity: 0.7;
-  }
+}
   
-  /* Error message styling (jika nanti kamu butuh) */
-  .errorMessage {
+/* --- Utility / Old Classes preserved --- */
+.errorMessage {
     font-size: 13px;
     color: #ef4444;
     margin-top: 4px;
-  }
+}
 
-  .priceInputWrapper {
+.priceInputWrapper {
     position: relative;
     display: flex;
     align-items: center;
-  }
+}
   
-  .currencyPrefix {
+.currencyPrefix {
     position: absolute;
     left: 12px;
     color: #666;
     font-weight: 600;
     pointer-events: none;
-  }
+}
   
-  .inputWithPrefix {
+.inputWithPrefix {
     padding-left: 40px !important;
     width: 100%;
     height: 40px;
     border: 1px solid #ddd;
     border-radius: 6px;
-  }
+}
 
-  .inputGroup input:focus,
-  .inputGroup select:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
+.emptyText {
+    text-align: center;
+    color: #94a3b8;
+    padding: 20px;
+    font-size: 14px;
+}
+
+.qtyControl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inputQty {
+  width: 60px;
+  padding: 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 600;
+}

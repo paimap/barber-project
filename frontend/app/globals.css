@@ -35,7 +35,6 @@ html, body {
 .content-full {
   width: 100%;
   max-width: 1200px; 
-  margin: 0 auto;   
-  background-color: #ffffff;
+  margin: 0 auto;
 }
 

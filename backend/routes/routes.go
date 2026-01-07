@@ -69,4 +69,16 @@ func SetupRoutes(r *gin.Engine) {
 		admin.DELETE("/inventory/:product_id", controllers.DeleteProductFromMainInventory)
 	}
 
+	barber := protected.Group("/barber")
+	barber.Use(middleware.RequireRole(models.RoleBarber))
+	{
+		barber.GET("/service", controllers.GetBarberService)
+		barber.POST("/service", controllers.CreateService)
+		barber.PUT("/service/:id", controllers.UpdateServicePaymentMethod)
+
+		barber.GET("/sales", controllers.GetBarberSales)
+		barber.POST("/sales", controllers.CreateProductSales)
+		barber.PUT("/sales/:id", controllers.UpdateSalesPaymentMethod)
+	}
+
 }

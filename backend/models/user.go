@@ -82,6 +82,7 @@ type Outlet struct {
 
 	OutletInventories []OutletInventory
 	ProductSales []ProductSales
+	Barbers []Barber
 }
 
 type OutletInventory struct {
@@ -153,10 +154,10 @@ type ServiceType struct{
 type Service_ServiceType struct{
 	gorm.Model
 
-	ServiceID uint `gorm:"not null"`
+	ServiceID uint `gorm:"index;uniqueIndex:idx_service_service_type"`
 	Service Service
 
-	ServiceTypeID uint `gorm:"not null"`
+	ServiceTypeID uint `gorm:"index;uniqueIndex:idx_service_service_type"`
 	ServiceType ServiceType
 }
 

@@ -69,7 +69,8 @@ export default function Sidebar() {
     } else if (userRole === 'BARBER') {
       return [
         { name: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard size={18} /> },
-        { name: 'Services', href: '/services', icon: <ShoppingCart size={18} /> },
+        { name: 'Services', href: '/services-barber', icon: <ShoppingCart size={18} /> },
+        { name: 'Product Sales', href: '/sales-barber', icon: <ShoppingCart size={18} /> },
       ]
     }
     return []
