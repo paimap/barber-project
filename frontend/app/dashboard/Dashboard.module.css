@@ -1,73 +1,55 @@
 .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 32px;
-  }
-  
-  /* Container Filter */
-  .filterGroup {
-    display: flex;
-    align-items: center;
-    background: white;
-    padding: 6px 14px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04);
-  }
-  
-  .filterIcon {
-    display: flex;
-    align-items: center;
-    color: #64748b;
-    margin-right: 12px;
-    border-right: 1px solid #f1f5f9;
-    padding-right: 12px;
-  }
-  
-  .dateInputs {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .dateInput {
-    border: none;
-    font-size: 13px;
-    font-weight: 600;
-    color: #0f172a;
-    outline: none;
-    background: transparent;
-    cursor: pointer;
-  }
-  
-  .dateDivider {
-    font-size: 12px;
-    font-weight: 700;
-    color: #cbd5e1;
-    text-transform: uppercase;
-  }
-  
-  /* Memastikan grid tetap padat */
-  .statsGrid {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start; /* Ubah ke start agar teks di bawahnya rapi */
+  margin-bottom: 24px;
+}
+
+.headerTitle h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.headerTitle p {
+  font-size: 14px;
+  color: #64748b; /* Warna abu-abu yang lebih soft */
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+
+
+  .statCard{
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 16px;
-    margin-bottom: 24px;
+    grid-template-columns: repeat(4,1fr);
+    gap: 15px;
   }
-  
-  .mainGrid {
+
+  .line{
+    margin-top: 15px;
+  }
+
+  .pie{
+    margin-top: 15px;
+    display: grid;
+    gap: 15px;
+  }
+
+  .linePie{
     display: grid;
     grid-template-columns: 1.6fr 1fr;
-    gap: 20px;
+    gap: 15px;
+  }
+
+  .leaderboardGrid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 15px;
   }
   
-  .sideCharts {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  
+
   @media (max-width: 1200px) {
     .statsGrid { grid-template-columns: repeat(3, 1fr); }
     .mainGrid { grid-template-columns: 1fr; }

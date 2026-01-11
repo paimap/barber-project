@@ -9,8 +9,11 @@ interface StatCardProps {
 
 export const StatCard = ({ label, value, icon }: StatCardProps) => (
   <div className={styles.card}>
-    <div className={styles.iconBox}>{icon}</div>
-    <span className={styles.label}>{label}</span>
+    <div className={styles.iconLabel}>
+      <div className={styles.iconBox}>{icon}</div>
+      <span className={styles.label}>{label}</span>
+    </div>
+    
     <span className={styles.value}>{value}</span>
   </div>
 );

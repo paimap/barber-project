@@ -10,6 +10,8 @@ import { MitraClientProps } from './types';
 import Modal from '@/components/modal/Modal';
 import MitraForm from '@/components/forms/mitra/MitraForm';
 import MitraUpdateForm from '@/components/forms/mitra/MitraUpdateForm';
+import { StatCard } from '@/components/statcard/StatCard';
+import { Wallet, Percent, ShoppingCart, TrendingUp } from 'lucide-react';
 
 export default function MitraClient({ mitraData }: MitraClientProps) {
   const [showModal, setShowModal] = useState(false);
@@ -83,6 +85,12 @@ export default function MitraClient({ mitraData }: MitraClientProps) {
           <Plus size={18} />
           <span>Create Mitra</span>
         </button>
+      </div>
+
+      <div className={styles.statCard}>
+        <StatCard label="Total Mitra" value="Rp 12.500.000" icon={<Wallet size={12}/>} />
+        <StatCard label="Total Cabang" value="Rp 2.500.000" icon={<Percent size={12}/>} />
+        <StatCard label="Revenue Mitra" value="15" icon={<ShoppingCart size={12}/>} />
       </div>
 
       <Table 

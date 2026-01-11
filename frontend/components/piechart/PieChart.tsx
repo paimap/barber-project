@@ -19,7 +19,7 @@ export const PieChartComp = ({ title, data, icon }: DistributionCardProps) => (
     </div>
     <ResponsiveContainer width="100%" height={150}>
       <PieChart>
-        <Pie data={data} innerRadius={45} outerRadius={60} paddingAngle={5} dataKey="value" stroke="none">
+        <Pie data={data} innerRadius={60} outerRadius={75} paddingAngle={5} dataKey="value" stroke="none">
           {data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
         </Pie>
         <Tooltip contentStyle={{ borderRadius: '8px', border: 'none' }} />

@@ -6,24 +6,26 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 40px;
+    margin-bottom: 24px;
   }
   
   .titleGroup h1 {
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 700;
     color: #0f172a;
     margin: 0;
   }
-  
+
   .titleGroup p {
-    color: #64748b;
+    font-size: 14px;
+    color: #64748b; /* Warna abu-abu yang lebih soft */
     margin-top: 4px;
+    margin-bottom: 0;
   }
   
   /* Section khusus untuk memisahkan Tabel Service dan Tabel Product */
   .section {
-    margin-bottom: 60px;
+    margin-bottom: 24px;
   }
   
   .sectionTitle {
@@ -34,8 +36,8 @@
   }
   
   .sectionTitle h2 {
-    font-size: 20px;
-    font-weight: 600;
+    font-size: 17px;
+    font-weight: 500;
     color: #1e293b;
   }
   
@@ -56,4 +58,11 @@
   
   .btnAddSmall:hover {
     background-color: #1e293b;
+  }
+
+  .statCard{
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 15px;
+    margin-bottom: 15px;
   }

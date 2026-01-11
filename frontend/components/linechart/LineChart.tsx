@@ -11,7 +11,7 @@ interface RevenueChartProps {
 export const LineChart = ({ title, data, lines }: RevenueChartProps) => (
   <div className={styles.chartContainer}>
     <h2 className={styles.title}>{title}</h2>
-    <ResponsiveContainer width="100%" height={320}>
+    <ResponsiveContainer width="100%" height={400}>
       <AreaChart data={data}>
         <defs>
           {lines.map((line) => (

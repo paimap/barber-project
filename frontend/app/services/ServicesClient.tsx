@@ -7,6 +7,8 @@ import Table from '@/components/table/Table';
 import Modal from '@/components/modal/Modal';
 import styles from './Services.module.css';
 import { ServicesClientProps } from './types';
+import { StatCard } from '@/components/statcard/StatCard';
+import { Wallet, Percent } from 'lucide-react';
 
 // Components
 import ProductForm from '@/components/forms/product/ProductForm';
@@ -109,6 +111,13 @@ export default function ServicesClient({ productData, serviceData }: ServicesCli
           <p>Configure your barber offerings and shop inventory.</p>
         </div>
       </header>
+
+      <div className={styles.statCard}>
+        <StatCard label="Revenue Produk" value="Rp 12.500.000" icon={<Wallet size={12}/>} />
+        <StatCard label="Revenue Service" value="Rp 2.500.000" icon={<Percent size={12}/>} />
+        <StatCard label="Total Produk" value="Rp 12.500.000" icon={<Wallet size={12}/>} />
+        <StatCard label="Total Service" value="Rp 2.500.000" icon={<Percent size={12}/>} />
+      </div>
 
       {/* SECTION: SERVICES */}
       <section className={styles.section}>
