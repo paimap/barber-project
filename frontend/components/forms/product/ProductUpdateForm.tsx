@@ -5,9 +5,9 @@ import styles from '@/components/forms/Form.module.css';
 
 interface ProductUpdateFormProps {
   initialData: {
-    ID: any;
-    Name: string;
-    Price: number; // Gunakan number agar konsisten dengan DB
+    id: any;
+    name: string;
+    price: number; // Gunakan number agar konsisten dengan DB
   };
   onSubmitSuccess: () => void;
 }
@@ -22,8 +22,8 @@ export default function ProductUpdateForm({ initialData, onSubmitSuccess }: Prod
   // Inisialisasi data awal ke dalam state
   useEffect(() => {
     if (initialData) {
-      setRawPrice(initialData.Price);
-      setDisplayPrice(new Intl.NumberFormat('id-ID').format(initialData.Price));
+      setRawPrice(initialData.price);
+      setDisplayPrice(new Intl.NumberFormat('id-ID').format(initialData.price));
     }
   }, [initialData]);
 
@@ -47,7 +47,7 @@ export default function ProductUpdateForm({ initialData, onSubmitSuccess }: Prod
     };
 
     try {
-      const res = await fetch(`/api/product/${initialData.ID}`, {
+      const res = await fetch(`/api/product/${initialData.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -75,7 +75,7 @@ export default function ProductUpdateForm({ initialData, onSubmitSuccess }: Prod
         <input 
           name="name" 
           type="text" 
-          defaultValue={initialData.Name} 
+          defaultValue={initialData.name} 
           required 
           className={styles.input}
         />

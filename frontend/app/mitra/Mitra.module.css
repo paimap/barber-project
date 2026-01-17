@@ -19,6 +19,9 @@
   }
   
   .btnCreate {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     background-color: #0f172a;
     color: white;
     padding: 10px 20px;
@@ -27,11 +30,17 @@
     font-weight: 600;
     border: none;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.2s ease;
   }
   
   .btnCreate:hover {
     background-color: #1e293b;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  }
+  
+  .btnCreate:active {
+    transform: translateY(0);
   }
   
   .statCard{

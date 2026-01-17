@@ -19,7 +19,7 @@ import ServiceTypeForm from '@/components/forms/service-type/ServiceTypeForm';
 import ServiceTypeUpdateForm from '@/components/forms/service-type/ServiceTypeUpdateForm';
 import DeleteConfirmServiceType from '@/components/forms/service-type/DeleteConfirmServiceType';
 
-export default function ServicesClient({ productData, serviceData }: ServicesClientProps) {
+export default function ServicesClient({ productData, serviceData, summaryData }: ServicesClientProps) {
   const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
 
@@ -38,6 +38,9 @@ export default function ServicesClient({ productData, serviceData }: ServicesCli
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  const formatIDR = (val: number) => 
+    new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
 
   // --- HANDLERS PRODUCT ---
   const handleOpenUpdateProduct = (id: any) => {
@@ -113,10 +116,26 @@ export default function ServicesClient({ productData, serviceData }: ServicesCli
       </header>
 
       <div className={styles.statCard}>
-        <StatCard label="Revenue Produk" value="Rp 12.500.000" icon={<Wallet size={12}/>} />
-        <StatCard label="Revenue Service" value="Rp 2.500.000" icon={<Percent size={12}/>} />
-        <StatCard label="Total Produk" value="Rp 12.500.000" icon={<Wallet size={12}/>} />
-        <StatCard label="Total Service" value="Rp 2.500.000" icon={<Percent size={12}/>} />
+        <StatCard 
+            label="Revenue Produk" 
+            value={isMounted ? formatIDR(summaryData.product_revenue) : "Rp ..."} 
+            icon={<Wallet size={12}/>} 
+        />
+        <StatCard 
+            label="Revenue Service" 
+            value={isMounted ? formatIDR(summaryData.service_revenue) : "Rp ..."} 
+            icon={<Percent size={12}/>} 
+        />
+        <StatCard 
+            label="Total Product Sold" 
+            value={isMounted ? summaryData.product_sold.toString() : "..."} 
+            icon={<Wallet size={12}/>} 
+        />
+        <StatCard 
+            label="Total Service Performed" 
+            value={isMounted ? summaryData.service_performed.toString() : "..."} 
+            icon={<Percent size={12}/>} 
+        />
       </div>
 
       {/* SECTION: SERVICES */}

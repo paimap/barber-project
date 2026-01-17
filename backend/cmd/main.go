@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"backend/config"
 	"backend/models"
@@ -16,6 +17,13 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
+
+	// Set timezone aplikasi secara global ke Asia/Jakarta
+    loc, err := time.LoadLocation("Asia/Jakarta")
+    if err != nil {
+        panic(err)
+    }
+    time.Local = loc
 
 	config.ConnectDatabase()
 

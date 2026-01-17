@@ -9,7 +9,14 @@ interface DistributionCardProps {
   icon: React.ReactNode;
 }
 
-const COLORS = ['#0f172a', '#38bdf8', '#94a3b8'];
+const COLORS = [
+  '#0f172a', // Slate 950
+  '#38bdf8', // Sky 400
+  '#6366f1', // Indigo 500
+  '#a855f7', // Purple 500
+  '#10b981', // Emerald 500
+  '#f59e0b', // Amber 500
+];
 
 export const PieChartComp = ({ title, data, icon }: DistributionCardProps) => (
   <div className={styles.card}>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DeleteConfirm from '@/components/forms/mitra/DeleteConfirm';
 import { useRouter } from 'next/navigation';
 import Table from '@/components/table/Table';
@@ -13,7 +13,7 @@ import MitraUpdateForm from '@/components/forms/mitra/MitraUpdateForm';
 import { StatCard } from '@/components/statcard/StatCard';
 import { Wallet, Percent, ShoppingCart, TrendingUp } from 'lucide-react';
 
-export default function MitraClient({ mitraData }: MitraClientProps) {
+export default function MitraClient({ mitraData, summaryData }: MitraClientProps) {
   const [showModal, setShowModal] = useState(false);
   const router = useRouter();
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -48,6 +48,13 @@ export default function MitraClient({ mitraData }: MitraClientProps) {
     }
   };
 
+  const handleOpenView = (id: any) => {
+    const mitra = mitraData.find((m) => m.id === id);
+    if (mitra) {
+      router.push(`/mitra/${id}`)
+    }
+  };
+
   const handleDeleteSuccess = () => {
     setIsDeleteOpen(false);
     setSelectedMitra(null);
@@ -56,7 +63,7 @@ export default function MitraClient({ mitraData }: MitraClientProps) {
 
   const mitraHeaders = [
     { key: 'name', label: 'Name' },
-    { key: 'phone', label: 'Phone Number' },
+    { key: 'phone_number', label: 'Phone Number' },
     { key: 'outlets', label: 'Outlet Count' },
     { key: 'joinDate', label: 'Join Date' },
   ];
@@ -88,15 +95,27 @@ export default function MitraClient({ mitraData }: MitraClientProps) {
       </div>
 
       <div className={styles.statCard}>
-        <StatCard label="Total Mitra" value="Rp 12.500.000" icon={<Wallet size={12}/>} />
-        <StatCard label="Total Cabang" value="Rp 2.500.000" icon={<Percent size={12}/>} />
-        <StatCard label="Revenue Mitra" value="15" icon={<ShoppingCart size={12}/>} />
+        <StatCard 
+          label="Total Mitra" 
+          value={summaryData.total_mitras.toString()} 
+          icon={<Wallet size={12}/>} 
+        />
+        <StatCard 
+          label="Total Cabang" 
+          value={summaryData.total_outlets.toString()} 
+          icon={<Percent size={12}/>} 
+        />
+        <StatCard 
+          label="Revenue Mitra" 
+          value={summaryData.today_revenue_formatted} 
+          icon={<ShoppingCart size={12}/>} 
+        />
       </div>
 
       <Table 
         headers={mitraHeaders} 
         data={mitras}
-        onDetail={(id) => console.log('View detail', id)}
+        onDetail={handleOpenView}
         onUpdate={handleOpenUpdate}
         onDelete={handleOpenDelete}
       />

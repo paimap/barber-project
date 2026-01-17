@@ -1,7 +1,7 @@
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start; /* Ubah ke start agar teks di bawahnya rapi */
+  align-items: flex-start;
   margin-bottom: 24px;
 }
 
@@ -14,43 +14,56 @@
 
 .headerTitle p {
   font-size: 14px;
-  color: #64748b; /* Warna abu-abu yang lebih soft */
+  color: #64748b;
   margin-top: 4px;
   margin-bottom: 0;
 }
 
+.statCard {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+}
 
-  .statCard{
-    display: grid;
-    grid-template-columns: repeat(4,1fr);
-    gap: 15px;
-  }
+.linePie {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 15px;
+}
 
-  .line{
-    margin-top: 15px;
-  }
+.line, .pie {
+  margin-top: 15px;
+}
 
-  .pie{
-    margin-top: 15px;
-    display: grid;
-    gap: 15px;
-  }
+.pie {
+  display: grid;
+  gap: 15px;
+}
 
-  .linePie{
-    display: grid;
-    grid-template-columns: 1.6fr 1fr;
-    gap: 15px;
-  }
+.leaderboardGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-top: 15px;
+}
 
-  .leaderboardGrid{
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin-top: 15px;
-  }
-  
+/* Tambahan untuk Handle Data Kosong */
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  color: #64748b;
+  font-size: 14px;
+  min-height: 200px;
+  text-align: center;
+  padding: 20px;
+}
 
-  @media (max-width: 1200px) {
-    .statsGrid { grid-template-columns: repeat(3, 1fr); }
-    .mainGrid { grid-template-columns: 1fr; }
-  }
+@media (max-width: 1200px) {
+  .statCard { grid-template-columns: repeat(2, 1fr); }
+  .linePie { grid-template-columns: 1fr; }
+  .leaderboardGrid { grid-template-columns: 1fr; }
+}

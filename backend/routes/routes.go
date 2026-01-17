@@ -54,6 +54,7 @@ func SetupRoutes(r *gin.Engine) {
 		admin.POST("/mitra", controllers.CreateMitra)
 		admin.PUT("/mitra/:id", controllers.UpdateMitra)
 		admin.DELETE("/mitra/:id", controllers.DeleteMitra)
+		admin.GET("mitra/summary", controllers.GetMitraSummary)
 
 		admin.POST("/products", controllers.CreateProduct)
 		admin.PUT("/products/:id", controllers.UpdateProduct)
@@ -63,10 +64,27 @@ func SetupRoutes(r *gin.Engine) {
 		admin.PUT("/service-type/:id", controllers.UpdateServiceType)
 		admin.DELETE("/service-type/:id", controllers.DeleteServiceType)
 
+		admin.GET("/product-service/summary", controllers.GetProductServiceSummary)
+
 		admin.PUT("/inventory", controllers.UpsertMainInventoryItem)
 		admin.GET("/inventory", controllers.GetMainInventory)
 		admin.PUT("/inventory/:product_id", controllers.UpdateMainInventoryStock)
 		admin.DELETE("/inventory/:product_id", controllers.DeleteProductFromMainInventory)
+
+		admin.GET("dashboard/summary", controllers.GetDailySummary)
+		admin.GET("dashboard/chart", controllers.GetRevenueChart)
+		admin.GET("dashboard/distribution", controllers.GetDistributions)
+		admin.GET("dashboard/leaderboard", controllers.GetRankings)
+
+		admin.GET("mitra/:id/summary", controllers.GetMitraSummaryByID)
+		admin.GET("mitra/:id/chart", controllers.GetMitraRevenueChart)
+		admin.GET("mitra/:id/distribution", controllers.GetMitraDistributions)
+		admin.GET("mitra/:id/outlets", controllers.GetMitraOutlets)
+		
+		admin.GET("outlet/:id/summary", controllers.GetOutletSummaryByID)
+		admin.GET("outlet/:id/chart", controllers.GetOutletRevenueChart)
+		admin.GET("outlet/:id/distribution", controllers.GetOutletDistributions)
+		admin.GET("outlet/:id/transactions", controllers.GetOutletTransactions)
 	}
 
 	barber := protected.Group("/barber")

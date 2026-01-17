@@ -1,19 +1,40 @@
 import { redirect } from "next/navigation";
 import MitraClient from "./MitraClient";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
-import { MitraType } from './types';
+import { MitraType, MitraSummaryType } from "./types";
 
 export default async function MitraPage() {
   try {
-    const res = await fetchWithAuth("http://localhost:8080/api/admin/mitra");
-    if (!res.ok) redirect("/login");
+    const baseUrl = "http://localhost:8080/api/admin/mitra";
 
-    const mitraData: { mitra: MitraType[] } = await res.json();
+    const [resMitra, resSummary] = await Promise.all([
+      fetchWithAuth(baseUrl),
+      fetchWithAuth(`${baseUrl}/summary`)
+    ]);
 
-    return <MitraClient mitraData={mitraData.mitra} />;
+    if (!resMitra.ok || !resSummary.ok) redirect("/login");
+
+    const mitraJson: { mitra: MitraType[] } = await resMitra.json();
+    const summaryJson: { data: MitraSummaryType } = await resSummary.json();
+
+    // ✅ FORMAT DI SERVER
+    const revenueFormatted = new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0,
+    }).format(summaryJson.data.today_revenue);
+
+    return (
+      <MitraClient 
+        mitraData={mitraJson.mitra || []} 
+        summaryData={{
+          ...summaryJson.data,
+          today_revenue_formatted: revenueFormatted, // ✅ kirim string
+        }}
+      />
+    );
   } catch (err) {
+    console.error(err);
     redirect("/login");
   }
-
-  return <MitraClient mitraData={[]} />;
 }
