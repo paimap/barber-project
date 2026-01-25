@@ -32,7 +32,8 @@ interface DashboardProps {
     };
     leaderboard: {
       top_outlets: Array<{ name: string; revenue: number }>;
-      top_mitras: Array<{ name: string; revenue: number }>;
+      top_mitras?: Array<{ name: string; revenue: number }>; // Opsional
+      top_barbers?: Array<{ name: string; revenue: number }>; // Opsional
     };
   };
 }
@@ -62,7 +63,7 @@ export default function DashboardClient({ initialData }: DashboardProps) {
       {/* HEADER */}
       <header className={styles.header}>
         <div className={styles.headerTitle}>
-          <h1>Dashboard Overview</h1>
+          <h1>Ringkasan Dashboard</h1>
           <p>Ringkasan performa 7 hari terakhir</p>
         </div>
       </header>
@@ -70,22 +71,22 @@ export default function DashboardClient({ initialData }: DashboardProps) {
       {/* STAT CARDS */}
       <div className={styles.statCard}>
         <StatCard
-          label="Total Revenue"
+          label="Total Pendapatan"
           value={formatIDR(summary.total_revenue)}
           icon={<Wallet size={14} />}
         />
         <StatCard
-          label="Profit (20%)"
+          label="Laba (20%)"
           value={formatIDR(summary.profit_20)}
           icon={<Percent size={14} />}
         />
         <StatCard
-          label="Service Revenue"
+          label="Pendapatan Jasa"
           value={formatIDR(summary.service_revenue)}
           icon={<ShoppingCart size={14} />}
         />
         <StatCard
-          label="Product Revenue"
+          label="Pendapatan Produk"
           value={formatIDR(summary.product_revenue)}
           icon={<TrendingUp size={14} />}
         />
@@ -96,11 +97,11 @@ export default function DashboardClient({ initialData }: DashboardProps) {
         <div className={styles.line}>
           {chart.length > 0 ? (
             <LineChart
-              title="Daily Revenue Flow"
+              title="Aliran Pendapatan Harian"
               data={chart}
               lines={[
-                {key: 'm', color: '#0f172a', name: 'Service Revenue'}, 
-                {key: 'p', color: '#38bdf8', name: 'Product revenue'}
+                {key: 'm', color: '#0f172a', name: 'Pendapatan Jasa'}, 
+                {key: 'p', color: '#38bdf8', name: 'Pendapatan Produk'}
               ]} 
             />
           ) : (
@@ -113,7 +114,7 @@ export default function DashboardClient({ initialData }: DashboardProps) {
         <div className={styles.pie}>
           {distribution.products.length > 0 ? (
             <PieChartComp
-              title="Products"
+              title="Distribusi Produk"
               data={distribution.products}
               icon={<Package size={16} />}
             />
@@ -123,7 +124,7 @@ export default function DashboardClient({ initialData }: DashboardProps) {
 
           {distribution.services.length > 0 ? (
             <PieChartComp
-              title="Services"
+              title="Distribusi Jasa"
               data={distribution.services}
               icon={<Scissors size={16} />}
             />

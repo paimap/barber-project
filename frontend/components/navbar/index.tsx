@@ -7,33 +7,27 @@ import {
   LayoutDashboard,
   Handshake,
   ShoppingCart,
-  AlignEndHorizontal,
   LogOut,
   Box,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 
-
 export default function Sidebar() {
   const pathname = usePathname()
-  const router = useRouter()
   const auth = useAuth()
 
-  if (!auth) {
-    return null;
-  }
+  if (!auth) return null
 
   if (auth.loading) {
     return (
       <aside className={styles.sidebar}>
         <div className={styles.brand}>Barberin.</div>
         <nav className={styles.menu}>
-          <p>Loading...</p>
+          <p style={{ color: '#94a3b8', padding: '0 12px' }}>Loading...</p>
         </nav>
       </aside>
-    );
-  } 
-
+    )
+  }
 
   const handleLogout = async () => {
     try {
@@ -45,12 +39,8 @@ export default function Sidebar() {
     }
   }
 
-  // Menu items berdasarkan role
   const getMenuItems = () => {
     const userRole = auth.user?.role
-    console.log('Current user:', auth.user); // Debug logging
-    console.log('User role:', userRole); // Debug logging
-
     if (userRole === 'SUPERADMIN') {
       return [
         { name: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard size={18} /> },
@@ -64,11 +54,9 @@ export default function Sidebar() {
         { name: 'Outlets', href: '/outlets', icon: <Handshake size={18} /> },
         { name: 'Barbers', href: '/barbers', icon: <ShoppingCart size={18} /> },
         { name: 'Service & Product', href: '/services', icon: <ShoppingCart size={18} /> },
-        { name: 'Stock Management', href: '/stock-outlet', icon: <Box size={18} /> },
       ]
     } else if (userRole === 'BARBER') {
       return [
-        { name: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard size={18} /> },
         { name: 'Services', href: '/services-barber', icon: <ShoppingCart size={18} /> },
         { name: 'Product Sales', href: '/sales-barber', icon: <ShoppingCart size={18} /> },
       ]
@@ -77,6 +65,8 @@ export default function Sidebar() {
   }
 
   const menuItems = getMenuItems()
+  // Mengambil huruf pertama email untuk avatar
+  const userInitial = auth.user?.email?.charAt(0).toUpperCase() || '?'
 
   return (
     <aside className={styles.sidebar}>
@@ -98,11 +88,28 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className={styles.logout}>
-        <button className={styles.logoutButton} onClick={handleLogout}>
-          <LogOut size={18} />
-          <span>Logout</span>
-        </button>
+      {/* Bagian Bawah: Info Pengguna & Logout */}
+      <div className={styles.userSection}>
+        <div className={styles.userInfo}>
+          <div className={styles.userAvatar}>
+            {userInitial}
+          </div>
+          <div className={styles.userDetails}>
+            <span className={styles.userEmail} title={auth.user?.email}>
+              {auth.user?.email}
+            </span>
+            <span className={styles.userRole}>
+              {auth.user?.role?.toLowerCase()}
+            </span>
+          </div>
+        </div>
+
+        <div className={styles.logout}>
+          <button className={styles.logoutButton} onClick={handleLogout}>
+            <LogOut size={18} />
+            <span>Logout</span>
+          </button>
+        </div>
       </div>
     </aside>
   )

@@ -2,15 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus } from 'lucide-react';
+import { Plus, Wallet, Percent } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext'; 
+
 import Table from '@/components/table/Table';
 import Modal from '@/components/modal/Modal';
 import styles from './Services.module.css';
 import { ServicesClientProps } from './types';
 import { StatCard } from '@/components/statcard/StatCard';
-import { Wallet, Percent } from 'lucide-react';
 
-// Components
+// Komponen Form
 import ProductForm from '@/components/forms/product/ProductForm';
 import ProductUpdateForm from '@/components/forms/product/ProductUpdateForm';
 import DeleteConfirm from '@/components/forms/product/DeleteConfirm';
@@ -20,16 +21,17 @@ import ServiceTypeUpdateForm from '@/components/forms/service-type/ServiceTypeUp
 import DeleteConfirmServiceType from '@/components/forms/service-type/DeleteConfirmServiceType';
 
 export default function ServicesClient({ productData, serviceData, summaryData }: ServicesClientProps) {
+  const { user } = useAuth(); 
   const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
 
-  // --- STATE UNTUK PRODUCT ---
+  // --- STATE UNTUK PRODUK ---
   const [showCreateProduct, setShowCreateProduct] = useState(false);
   const [showUpdateProduct, setShowUpdateProduct] = useState(false);
   const [showDeleteProduct, setShowDeleteProduct] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
-  // --- STATE UNTUK SERVICE ---
+  // --- STATE UNTUK LAYANAN ---
   const [showCreateService, setShowCreateService] = useState(false);
   const [showUpdateService, setShowUpdateService] = useState(false);
   const [showDeleteService, setShowDeleteService] = useState(false);
@@ -39,10 +41,13 @@ export default function ServicesClient({ productData, serviceData, summaryData }
     setIsMounted(true);
   }, []);
 
+  // Cek apakah user adalah Superadmin
+  const isSuperAdmin = user?.role === "SUPERADMIN";
+
   const formatIDR = (val: number) => 
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
 
-  // --- HANDLERS PRODUCT ---
+  // --- HANDLERS PRODUK ---
   const handleOpenUpdateProduct = (id: any) => {
     const target = productData.find((m: any) => m.ID === id);
     if (target) {
@@ -67,7 +72,7 @@ export default function ServicesClient({ productData, serviceData, summaryData }
     router.refresh();
   };
 
-  // --- HANDLERS SERVICE ---
+  // --- HANDLERS LAYANAN ---
   const handleOpenUpdateService = (id: any) => {
     const target = serviceData.find((m: any) => m.ID === id);
     if (target) {
@@ -94,8 +99,8 @@ export default function ServicesClient({ productData, serviceData, summaryData }
 
   // --- FORMATTING ---
   const commonHeaders = [
-    { key: 'name', label: 'Item Name' },
-    { key: 'price', label: 'Price' },
+    { key: 'name', label: 'Nama Item' },
+    { key: 'price', label: 'Harga' },
   ];
 
   const formatData = (data: any[]) => data.map(m => ({
@@ -110,72 +115,78 @@ export default function ServicesClient({ productData, serviceData, summaryData }
     <div className={styles.pageContainer}>
       <header className={styles.headerSection}>
         <div className={styles.titleGroup}>
-          <h1>Services & Products</h1>
-          <p>Configure your barber offerings and shop inventory.</p>
+          <h1>Layanan & Produk</h1>
+          <p>Konfigurasi penawaran barber dan inventaris toko Anda.</p>
         </div>
       </header>
 
       <div className={styles.statCard}>
         <StatCard 
-            label="Revenue Produk" 
+            label="Pendapatan Produk" 
             value={isMounted ? formatIDR(summaryData.product_revenue) : "Rp ..."} 
             icon={<Wallet size={12}/>} 
         />
         <StatCard 
-            label="Revenue Service" 
+            label="Pendapatan Jasa" 
             value={isMounted ? formatIDR(summaryData.service_revenue) : "Rp ..."} 
             icon={<Percent size={12}/>} 
         />
         <StatCard 
-            label="Total Product Sold" 
+            label="Total Produk Terjual" 
             value={isMounted ? summaryData.product_sold.toString() : "..."} 
             icon={<Wallet size={12}/>} 
         />
         <StatCard 
-            label="Total Service Performed" 
+            label="Total Jasa Dilakukan" 
             value={isMounted ? summaryData.service_performed.toString() : "..."} 
             icon={<Percent size={12}/>} 
         />
       </div>
 
-      {/* SECTION: SERVICES */}
+      {/* SEKSI: LAYANAN */}
       <section className={styles.section}>
         <div className={styles.sectionTitle}>
-          <h2>Barber Services</h2>
-          <button className={styles.btnAddSmall} onClick={() => setShowCreateService(true)}>
-            <Plus size={16} /> Add Service
-          </button>
+          <h2>Layanan Barber</h2>
+          {/* HANYA MUNCUL JIKA SUPERADMIN */}
+          {isSuperAdmin && (
+            <button className={styles.btnAddSmall} onClick={() => setShowCreateService(true)}>
+              <Plus size={16} /> Tambah Layanan
+            </button>
+          )}
         </div>
         <Table 
           headers={commonHeaders} 
           data={formatData(serviceData)}
-          onUpdate={handleOpenUpdateService}
-          onDelete={handleOpenDeleteService}
+          onUpdate={isSuperAdmin ? handleOpenUpdateService : undefined}
+          onDelete={isSuperAdmin ? handleOpenDeleteService : undefined}
         />
       </section>
 
-      {/* SECTION: PRODUCTS */}
+      {/* SEKSI: PRODUK */}
       <section className={styles.section}>
         <div className={styles.sectionTitle}>
-          <h2>Products</h2>
-          <button className={styles.btnAddSmall} onClick={() => setShowCreateProduct(true)}>
-            <Plus size={16} /> Add Product
-          </button>
+          <h2>Produk</h2>
+          {/* HANYA MUNCUL JIKA SUPERADMIN */}
+          {isSuperAdmin && (
+            <button className={styles.btnAddSmall} onClick={() => setShowCreateProduct(true)}>
+              <Plus size={16} /> Tambah Produk
+            </button>
+          )}
         </div>
         <Table 
           headers={commonHeaders} 
           data={formatData(productData)}
-          onUpdate={handleOpenUpdateProduct}
-          onDelete={handleOpenDeleteProduct}
+          onUpdate={isSuperAdmin ? handleOpenUpdateProduct : undefined}
+          onDelete={isSuperAdmin ? handleOpenDeleteProduct : undefined}
         />
       </section>
 
-      {/* --- MODALS PRODUCT --- */}
-      <Modal isOpen={showCreateProduct} onClose={() => setShowCreateProduct(false)} title="Register New Product">
+      {/* --- MODAL PRODUK --- */}
+      <Modal isOpen={showCreateProduct} onClose={() => setShowCreateProduct(false)} title="Daftarkan Produk Baru">
         <ProductForm onSubmitSuccess={onProductSuccess} />
       </Modal>
 
-      <Modal isOpen={showUpdateProduct} onClose={() => setShowUpdateProduct(false)} title="Update Product">
+      <Modal isOpen={showUpdateProduct} onClose={() => setShowUpdateProduct(false)} title="Perbarui Produk">
         {selectedProduct && <ProductUpdateForm initialData={selectedProduct} onSubmitSuccess={onProductSuccess} />}
       </Modal>
 
@@ -185,12 +196,12 @@ export default function ServicesClient({ productData, serviceData, summaryData }
         )}
       </Modal>
 
-      {/* --- MODALS SERVICE --- */}
-      <Modal isOpen={showCreateService} onClose={() => setShowCreateService(false)} title="Add New Service">
+      {/* --- MODAL LAYANAN --- */}
+      <Modal isOpen={showCreateService} onClose={() => setShowCreateService(false)} title="Tambah Layanan Baru">
         <ServiceTypeForm onSubmitSuccess={onServiceSuccess} />
       </Modal>
 
-      <Modal isOpen={showUpdateService} onClose={() => setShowUpdateService(false)} title="Update Service">
+      <Modal isOpen={showUpdateService} onClose={() => setShowUpdateService(false)} title="Perbarui Layanan">
         {selectedService && <ServiceTypeUpdateForm initialData={selectedService} onSubmitSuccess={onServiceSuccess} />}
       </Modal>
 

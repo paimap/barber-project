@@ -50,10 +50,63 @@
     color: #38bdf8;     
   }
   
+.userSection {
+  margin-top: auto;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px;
+}
+
+.userAvatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #38bdf8; /* Senada dengan warna active */
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.userDetails {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.userEmail {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Email panjang akan terpotong rapi dengan ... */
+}
+
+.userRole {
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+/* Modifikasi logout agar tidak memiliki margin-top sendiri lagi */
 .logout {
-  margin-top: auto; 
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08); 
+  padding-top: 0;
+  border-top: none;
 }
 
 .logoutButton {
@@ -77,9 +130,4 @@
   background: rgba(239, 68, 68, 0.1); 
   color: #ef4444; 
   border: 1px solid rgba(239, 68, 68, 0.2);
-}
-
-.logoutButton:hover svg {
-  transform: translateX(3px);
-  transition: transform 0.2s ease;
 }

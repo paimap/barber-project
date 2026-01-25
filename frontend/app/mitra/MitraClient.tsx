@@ -62,18 +62,18 @@ export default function MitraClient({ mitraData, summaryData }: MitraClientProps
   };
 
   const mitraHeaders = [
-    { key: 'name', label: 'Name' },
-    { key: 'phone_number', label: 'Phone Number' },
-    { key: 'outlets', label: 'Outlet Count' },
-    { key: 'joinDate', label: 'Join Date' },
+    { key: 'name', label: 'Nama' },
+    { key: 'phone_number', label: 'Nomor Telepon' },
+    { key: 'outlets', label: 'Jumlah Outlet' },
+    { key: 'joinDate', label: 'Tanggal Bergabung' },
   ];
 
   const mitras = mitraData.map(m => ({
     id: m.id,
     name: m.name,
     phone: m.phone_number, 
-    outlets: `${m.outlet_count} ${m.outlet_count !== 1 ? "Outlets" : "Outlet"}`,
-    joinDate: new Date(m.created_at).toLocaleDateString("en-US", {
+    outlets: `${m.outlet_count} Outlet`,
+    joinDate: new Date(m.created_at).toLocaleDateString("id-ID", {
       day: "2-digit",
       month: "short",
       year: "numeric",
@@ -85,12 +85,12 @@ export default function MitraClient({ mitraData, summaryData }: MitraClientProps
     <div className={styles.pageContainer}>
       <div className={styles.headerSection}>
         <div className={styles.titleGroup}>
-          <h1>Mitra List</h1>
-          <p>Manage and monitor all your partner barbershops.</p>
+          <h1>Daftar Mitra</h1>
+          <p>Kelola dan pantau seluruh mitra barbershop Anda.</p>
         </div>
         <button className={styles.btnCreate} onClick={() => setShowModal(true)}>
           <Plus size={18} />
-          <span>Create Mitra</span>
+          <span>Tambah Mitra</span>
         </button>
       </div>
 
@@ -106,7 +106,7 @@ export default function MitraClient({ mitraData, summaryData }: MitraClientProps
           icon={<Percent size={12}/>} 
         />
         <StatCard 
-          label="Revenue Mitra" 
+          label="Pendapatan Mitra" 
           value={summaryData.today_revenue_formatted} 
           icon={<ShoppingCart size={12}/>} 
         />
@@ -123,7 +123,7 @@ export default function MitraClient({ mitraData, summaryData }: MitraClientProps
       <Modal 
         isOpen={showModal} 
         onClose={() => setShowModal(false)} 
-        title="Register New Mitra"
+        title="Daftarkan Mitra Baru"
       >
         <MitraForm onSubmitSuccess={handleRefresh} />
       </Modal>
@@ -146,7 +146,7 @@ export default function MitraClient({ mitraData, summaryData }: MitraClientProps
       <Modal 
         isOpen={isUpdateOpen} 
         onClose={() => setIsUpdateOpen(false)} 
-        title="Update Mitra Information"
+        title="Perbarui Informasi Mitra"
       >
         {editData && (
           <MitraUpdateForm

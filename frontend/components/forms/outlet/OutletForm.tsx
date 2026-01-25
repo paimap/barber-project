@@ -5,9 +5,10 @@ import styles from '@/components/forms/Form.module.css';
 
 interface OutletFormProps {
   onSubmitSuccess: () => void;
+  mitraId: string
 }
 
-export default function OutletForm({ onSubmitSuccess }: OutletFormProps) {
+export default function OutletForm({ onSubmitSuccess, mitraId }: OutletFormProps) {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -17,11 +18,11 @@ export default function OutletForm({ onSubmitSuccess }: OutletFormProps) {
     const formData = new FormData(e.currentTarget);
     const data = {
       address: formData.get('address'),
-      phone: formData.get('phone'),
+      phone_number: formData.get('phone_number'),
     };
 
     try {
-      const res = await fetch('/api/outlets', {
+      const res = await fetch(`/api/mitra/${mitraId}/outlets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -58,7 +59,7 @@ export default function OutletForm({ onSubmitSuccess }: OutletFormProps) {
       <div className={styles.inputGroup}>
         <label>Nomor Telepon</label>
         <input
-          name="phone"
+          name="phone_number"
           type="tel"
           placeholder="Masukkan nomor telepon"
           required

@@ -2,18 +2,29 @@ package models
 
 import (
 	"gorm.io/gorm"
+	"time"
 )
 
 type User struct {
 	gorm.Model
 	Email    string `gorm:"uniqueIndex;not null"`
 	Password string `gorm:"not null"`
+	ChatLimit       int       `gorm:"default:5"` // Kuota harian
+    LastChatDate    time.Time // Tanggal terakhir user bertanya
 
 	Role string `gorm:"type:varchar(20);not null"`
 
 	SuperAdmin *SuperAdmin `gorm:"foreignKey:UserID"`
 	Mitra *Mitra `gorm:"foreignKey:UserID"`
 	Barber *Barber `gorm:"foreignKey:UserID"`
+}
+
+type ChatHistory struct {
+    ID        uint      `gorm:"primaryKey"`
+    UserID    uint      `gorm:"index"`
+    Role      string    `json:"role"` // "user" atau "model"
+    Content   string    `json:"content"`
+    CreatedAt time.Time
 }
 
 const (

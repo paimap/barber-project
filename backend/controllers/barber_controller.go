@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -254,4 +255,55 @@ func AssignBarberToOutlet(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "barber assigned to outlet successfully"})
+}
+
+type BarberStatsResponse struct {
+    BarberID     uint   `json:"barber_id"`
+    BarberName   string `json:"barber_name"`
+    TotalService int64  `json:"total_service"`
+    TotalRevenue int64  `json:"total_revenue"`
+}
+func GetBarberStatsToday(c *gin.Context) {
+    db := config.DB
+	userID := c.GetUint("user_id")
+
+	var barber models.Barber
+	if err := db.Where("user_id = ?", userID).First(&barber).Error; err != nil{
+		c.JSON(http.StatusNotFound, gin.H{"error" : "barber not found"})
+	}
+
+    // 1. Tentukan rentang waktu "Hari Ini" (00:00:00 sampai sekarang)
+    now := time.Now()
+    todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+
+    var stats BarberStatsResponse
+
+    // 2. Query Agregasi dengan Filter Waktu
+    err := db.Model(&models.Service{}).
+        Select("services.barber_id, barbers.name as barber_name, COUNT(services.id) as total_service, SUM(services.price_at_sale) as total_revenue").
+        Joins("JOIN barbers ON barbers.id = services.barber_id").
+        Where("services.barber_id = ? AND services.created_at >= ?", barber.ID, todayStart).
+        Group("services.barber_id, barbers.name").
+        Scan(&stats).Error
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data hari ini"})
+        return
+    }
+
+    // 3. Penanganan jika belum ada service hari ini
+    if stats.BarberID == 0 {
+        var barberSelect models.Barber
+        db.First(&barberSelect, barber.ID)
+        stats.BarberID = barberSelect.ID
+        stats.BarberName = barberSelect.Name
+        stats.TotalService = 0
+        stats.TotalRevenue = 0
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "status": "success",
+        "period": "today",
+        "data":   stats,
+    })
 }

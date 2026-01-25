@@ -1,10 +1,16 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers"; // WAJIB DIIMPOR
 import DashboardClient from "./DashboardClient";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 
-async function getDashboardData() {
-  const baseUrl = "http://localhost:8080/api/admin/dashboard";
+async function getProfile() {
+  const res = await fetchWithAuth("http://localhost:8080/api/me")
 
+  if (!res.ok) return null;
+  return res.json();
+}
+
+async function getDashboardData(baseUrl: string) {
   try {
     const [summaryRes, chartRes, distRes, leaderboardRes] = await Promise.all([
       fetchWithAuth(`${baseUrl}/summary`, { cache: "no-store" }),
@@ -13,12 +19,15 @@ async function getDashboardData() {
       fetchWithAuth(`${baseUrl}/leaderboard`, { cache: "no-store" }),
     ]);
 
-    if (summaryRes.status === 401) redirect("/login");
+    // Error handling yang lebih rapi
+    if (summaryRes.status === 401) return null;
 
-    const summaryJson = await summaryRes.json().catch(() => ({}));
-    const chartJson = await chartRes.json().catch(() => ({}));
-    const distJson = await distRes.json().catch(() => ({}));
-    const leaderboardJson = await leaderboardRes.json().catch(() => ({}));
+    const [summaryJson, chartJson, distJson, leaderboardJson] = await Promise.all([
+      summaryRes.json().catch(() => ({})),
+      chartRes.json().catch(() => ({})),
+      distRes.json().catch(() => ({})),
+      leaderboardRes.json().catch(() => ({})),
+    ]);
 
     return {
       summary: {
@@ -44,16 +53,21 @@ async function getDashboardData() {
 }
 
 export default async function DashboardPage() {
-  const data = await getDashboardData();
+  const profileData = await getProfile();
+
+  if (!profileData || !profileData.data) {
+    redirect("/login");
+  }
+
+  const id = profileData.data.id;
+  const roleRaw = profileData.data.role;
+  const rolePath = roleRaw === "SUPERADMIN" ? "admin" : roleRaw.toLowerCase();
+
+  const baseUrl = rolePath === "admin" ? `http://localhost:8080/api/${rolePath}/dashboard` : `http://localhost:8080/api/${rolePath}/dashboard/${id}`;
+  const data = await getDashboardData(baseUrl);
 
   if (!data) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <p className="text-red-500">
-          Gagal memuat dashboard. Pastikan backend berjalan.
-        </p>
-      </div>
-    );
+    redirect("/login");
   }
 
   return <DashboardClient initialData={data} />;

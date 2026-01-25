@@ -20,7 +20,7 @@ func SetupRoutes(r *gin.Engine) {
 	protected := r.Group("/api")
 	protected.Use(middleware.JwtAuthMiddleware())
 	{
-		protected.GET("/profile", controllers.Profile)
+		protected.GET("/me", controllers.GetCurrentUser)
 		protected.GET("/products", controllers.GetAllProduct)
 		protected.GET("/service-type", controllers.GetAllServiceType)
 
@@ -45,6 +45,16 @@ func SetupRoutes(r *gin.Engine) {
 		mitra.GET("/inventory", controllers.GetOutletInventory)
 		mitra.PUT("/inventory/:product_id", controllers.UpdateOutletInventoryStock)
 		mitra.DELETE("/inventory/:product_id", controllers.DeleteProductFromOutletInventory)
+
+		mitra.GET("dashboard/:id/summary", controllers.GetMitraSummaryByID)
+		mitra.GET("dashboard/:id/chart", controllers.GetMitraRevenueChart)
+		mitra.GET("dashboard/:id/distribution", controllers.GetMitraDistributions)
+		mitra.GET("dashboard/:id/leaderboard", controllers.GetMitraLeaderboard)
+
+		mitra.GET("outlet/:id/summary", controllers.GetOutletSummaryByID)
+		mitra.GET("outlet/:id/chart", controllers.GetOutletRevenueChart)
+		mitra.GET("outlet/:id/distribution", controllers.GetOutletDistributions)
+		mitra.GET("outlet/:id/transactions", controllers.GetOutletTransactions)
 	}
 
 	admin := protected.Group("/admin")
@@ -80,6 +90,9 @@ func SetupRoutes(r *gin.Engine) {
 		admin.GET("mitra/:id/chart", controllers.GetMitraRevenueChart)
 		admin.GET("mitra/:id/distribution", controllers.GetMitraDistributions)
 		admin.GET("mitra/:id/outlets", controllers.GetMitraOutlets)
+		admin.POST("mitra/:id/outlets", controllers.CreateOutletByMitraID)
+		admin.DELETE("mitra/outlets/:id", controllers.DeleteOutletByAdmin)
+		admin.PUT("mitra/outlets/:id", controllers.UpdateOutletByAdmin)
 		
 		admin.GET("outlet/:id/summary", controllers.GetOutletSummaryByID)
 		admin.GET("outlet/:id/chart", controllers.GetOutletRevenueChart)
@@ -97,6 +110,7 @@ func SetupRoutes(r *gin.Engine) {
 		barber.GET("/sales", controllers.GetBarberSales)
 		barber.POST("/sales", controllers.CreateProductSales)
 		barber.PUT("/sales/:id", controllers.UpdateSalesPaymentMethod)
-	}
 
+		barber.GET("/service/summary", controllers.GetBarberStatsToday)
+	}
 }

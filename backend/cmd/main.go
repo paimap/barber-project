@@ -46,8 +46,10 @@ func main() {
 		&models.Product_ProductSales{},
 
 		&models.Service{},
-		&models.ServiceType{},          // ← INI YANG KURANG
-		&models.Service_ServiceType{},  // ← junction table
+		&models.ServiceType{},        
+		&models.Service_ServiceType{},  
+
+		&models.ChatHistory{},
 	)
 
 	

@@ -5,6 +5,8 @@ import (
 	"backend/models"
 	"net/http"
 	"time"
+    "strconv"
+    "gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 )
@@ -195,6 +197,48 @@ func GetMitraDistributions(c *gin.Context) {
     })
 }
 
+
+func GetMitraLeaderboard(c *gin.Context) {
+    // 1. Rentang waktu hari ini
+    now := time.Now()
+    startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
+    endOfDay := startOfDay.Add(24 * time.Hour)
+
+    // 2. Top 3 Cabang (Outlet) Berdasarkan Revenue (Product Sales)
+    var topOutlets []RankingData
+    config.DB.Raw(`
+        SELECT o.address as name, SUM(ps.price_at_sale) as revenue
+        FROM product_sales ps
+        JOIN outlets o ON o.id = ps.outlet_id
+        WHERE ps.created_at >= ? AND ps.created_at < ?
+          AND ps.deleted_at IS NULL
+        GROUP BY o.id, o.address
+        ORDER BY revenue DESC
+        LIMIT 3
+    `, startOfDay, endOfDay).Scan(&topOutlets)
+
+    // 3. Top 3 Barber Berdasarkan Revenue (Service)
+    var topBarbers []RankingData
+    config.DB.Raw(`
+        SELECT b.name, SUM(s.price_at_sale) as revenue
+        FROM services s
+        JOIN barbers b ON b.id = s.barber_id
+        WHERE s.created_at >= ? AND s.created_at < ?
+          AND s.deleted_at IS NULL
+        GROUP BY b.id, b.name
+        ORDER BY revenue DESC
+        LIMIT 3
+    `, startOfDay, endOfDay).Scan(&topBarbers)
+
+    c.JSON(http.StatusOK, gin.H{
+        "status": "success",
+        "data": gin.H{
+            "top_outlets": topOutlets,
+            "top_barbers": topBarbers,
+        },
+    })
+}
+
 func GetMitraOutlets(c *gin.Context) {
     // 1. Ambil ID mitra dari parameter URL /:id
     mitraID := c.Param("id")
@@ -231,5 +275,165 @@ func GetMitraOutlets(c *gin.Context) {
         "status":   "success",
         "mitra_id": mitraID,
         "data":     outlets,
+    })
+}
+
+type CreateOutletRequest struct {
+    Address     string `json:"address" binding:"required"`
+    PhoneNumber string `json:"phone_number" binding:"required"`
+    MitraID     uint   `json:"mitra_id" binding:"required"`
+}
+func CreateOutletByMitraID(c *gin.Context) {
+    // 1. Ambil MitraID dari URL parameter
+    mitraIDParam := c.Param("id") 
+    
+    // Konversi string ke uint
+    mitraID, err := strconv.ParseUint(mitraIDParam, 10, 32)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Format Mitra ID tidak valid"})
+        return
+    }
+
+    // 2. Bind JSON (Hanya Address dan PhoneNumber, MitraID diambil dari URL)
+    type RequestBody struct {
+        Address     string `json:"address" binding:"required"`
+        PhoneNumber string `json:"phone_number" binding:"required"`
+    }
+    
+    var input RequestBody
+    if err := c.ShouldBindJSON(&input); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    db := config.DB
+
+    // 3. Cek apakah Mitra ada di database
+    var mitra models.Mitra
+    if err := db.First(&mitra, uint(mitraID)).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Mitra tidak ditemukan"})
+        return
+    }
+
+    // 4. Inisialisasi dan Simpan Outlet
+    newOutlet := models.Outlet{
+        Address:     input.Address,
+        PhoneNumber: input.PhoneNumber,
+        MitraID:     uint(mitraID), 
+    }
+
+    if err := db.Create(&newOutlet).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membuat outlet"})
+        return
+    }
+
+    c.JSON(http.StatusCreated, gin.H{
+        "message": "Outlet berhasil dibuat",
+        "data":    newOutlet,
+    })
+}
+
+func DeleteOutletByAdmin(c *gin.Context) {
+	db := config.DB
+	outletIDParam := c.Param("id")
+
+	// 1. Konversi ID
+	outletID, err := strconv.ParseUint(outletIDParam, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID Outlet tidak valid"})
+		return
+	}
+
+	// 2. Mulai Transaksi
+	err = db.Transaction(func(tx *gorm.DB) error {
+		// A. Cek apakah outlet ada
+		var outlet models.Outlet
+		if err := tx.First(&outlet, uint(outletID)).Error; err != nil {
+			return err
+		}
+
+		// B. Update Barber: Set OutletID menjadi NULL
+		if err := tx.Model(&models.Barber{}).Where("outlet_id = ?", outletID).Update("outlet_id", nil).Error; err != nil {
+			return err
+		}
+
+		// C. Hapus OutletInventory yang terhubung dengan Outlet ini
+		var inventories []models.OutletInventory
+		tx.Where("outlet_id = ?", outletID).Find(&inventories)
+		
+		for _, inv := range inventories {
+			// Hapus detail produk di dalam inventory tersebut
+			if err := tx.Where("outlet_inventory_id = ?", inv.ID).Delete(&models.Product_OutletInventory{}).Error; err != nil {
+				return err
+			}
+		}
+
+		// D. Hapus data OutletInventory itu sendiri
+		if err := tx.Where("outlet_id = ?", outletID).Delete(&models.OutletInventory{}).Error; err != nil {
+			return err
+		}
+
+		// E. Terakhir, hapus Outlet-nya
+		if err := tx.Delete(&outlet).Error; err != nil {
+			return err
+		}
+
+		return nil // Commit transaksi
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghapus data: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Outlet berhasil dihapus, Barber telah dilepas (unassigned)",
+	})
+}
+
+func UpdateOutletByAdmin(c *gin.Context) {
+    db := config.DB
+    outletIDParam := c.Param("id")
+
+    // 1. Konversi ID dari string ke uint
+    outletID, err := strconv.ParseUint(outletIDParam, 10, 32)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "ID Outlet tidak valid"})
+        return
+    }
+
+    // 2. Struct untuk validasi input (hanya field yang boleh diubah)
+    type UpdateOutletRequest struct {
+        Address     string `json:"address"`
+        PhoneNumber string `json:"phone_number"`
+    }
+
+    var input UpdateOutletRequest
+    if err := c.ShouldBindJSON(&input); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    // 3. Cek apakah outlet tersebut ada
+    var outlet models.Outlet
+    if err := db.First(&outlet, uint(outletID)).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Outlet tidak ditemukan"})
+        return
+    }
+
+    // 4. Proses Update
+    updateData := models.Outlet{
+        Address:     input.Address,
+        PhoneNumber: input.PhoneNumber,
+    }
+
+    if err := db.Model(&outlet).Updates(updateData).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal memperbarui outlet"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "message": "Outlet berhasil diperbarui",
+        "data":    outlet,
     })
 }

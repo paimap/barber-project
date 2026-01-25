@@ -4,9 +4,9 @@ import { useState } from 'react';
 import styles from '@/components/forms/Form.module.css';
 
 interface Outlet {
-  ID: number;
-  Address: string;
-  PhoneNumber: string;
+  id: number;
+  address: string;
+  phone_number: string;
 }
 
 interface OutletUpdateFormProps {
@@ -28,7 +28,7 @@ export default function OutletUpdateForm({ initialData, onSubmitSuccess }: Outle
     };
 
     try {
-      const res = await fetch(`/api/outlets/${initialData.ID}`, {
+      const res = await fetch(`/api/outlets/${initialData.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -57,7 +57,7 @@ export default function OutletUpdateForm({ initialData, onSubmitSuccess }: Outle
           name="address"
           type="text"
           placeholder="Masukkan alamat outlet"
-          defaultValue={initialData.Address}
+          defaultValue={initialData.address}
           className={styles.input}
         />
       </div>
@@ -68,7 +68,7 @@ export default function OutletUpdateForm({ initialData, onSubmitSuccess }: Outle
           name="phone"
           type="tel"
           placeholder="Masukkan nomor telepon"
-          defaultValue={initialData.PhoneNumber}
+          defaultValue={initialData.phone_number}
           className={styles.input}
         />
       </div>

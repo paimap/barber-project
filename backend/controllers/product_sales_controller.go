@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"github.com/lib/pq"
+	"math"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -161,6 +162,7 @@ type BarberSalesResponse struct {
 	Quantity int64          `json:"Quantity"`
 }
 func GetBarberSales(c *gin.Context) {
+    // 1. Ambil userID dari context
     userIDValue, exists := c.Get("user_id")
     if !exists {
         c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
@@ -168,15 +170,40 @@ func GetBarberSales(c *gin.Context) {
     }
     userID := userIDValue.(uint)
 
+    // 2. Cari data Barber
     var barber models.Barber
+    // Pastikan kita mengambil data barber yang memiliki OutletID
     if err := config.DB.Where("user_id = ?", userID).First(&barber).Error; err != nil {
         c.JSON(http.StatusNotFound, gin.H{"error": "barber not found"})
         return
     }
 
-    var sales []BarberSalesResponse
+    // VALIDASI: Cek jika barber belum terdaftar di outlet manapun
+    if barber.OutletID == 0 {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "barber is not assigned to any outlet"})
+        return
+    }
 
-    // Implementasi Query SQL ke GORM
+    // 3. Parameter Pagination
+    page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+    limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+    if page < 1 { page = 1 }
+    if limit < 1 { limit = 10 }
+    offset := (page - 1) * limit
+
+    // 4. Hitung Total Data (Gunakan barber.OutletID yang sudah pasti ada)
+    var totalRows int64
+    config.DB.Raw(`
+        SELECT COUNT(*) FROM (
+            SELECT ps.id 
+            FROM product_sales ps
+            WHERE ps.outlet_id = ? AND ps.deleted_at IS NULL
+        ) as total`, barber.OutletID).Scan(&totalRows)
+
+    totalPages := int(math.Ceil(float64(totalRows) / float64(limit)))
+
+    // 5. Query Utama (Sales Produk sesuai permintaan sebelumnya)
+    var sales []BarberSalesResponse
     err := config.DB.Table("product_product_sales").
         Select(`
             product_sales.id as sales_id, 
@@ -188,19 +215,31 @@ func GetBarberSales(c *gin.Context) {
         `).
         Joins("JOIN products ON products.id = product_product_sales.product_id").
         Joins("JOIN product_sales ON product_sales.id = product_product_sales.product_sales_id").
-        Where("product_sales.outlet_id = ?", barber.OutletID).
-		Where("product_sales.deleted_at IS NULL").
-        Where("products.deleted_at IS NULL").
-        Where("product_product_sales.deleted_at IS NULL").
-        Group("product_sales.id").
+        Where("product_sales.outlet_id = ?", barber.OutletID). 
+        Where("product_sales.deleted_at IS NULL").
+        Group("product_sales.id, product_sales.price_at_sale, product_sales.payment_type, product_sales.created_at").
+        Order("product_sales.created_at DESC").
+        Limit(limit).
+        Offset(offset).
         Scan(&sales).Error
 
     if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error: " + err.Error()})
         return
     }
 
-    c.JSON(http.StatusOK, gin.H{"sales": sales})
+    c.JSON(http.StatusOK, gin.H{
+        "status": "success",
+        "data":   sales,
+        "meta": gin.H{
+            "current_page": page,
+            "limit":        limit,
+            "total_rows":   totalRows,
+            "total_pages":  totalPages,
+            "has_next":     page < totalPages,
+            "has_prev":     page > 1,
+        },
+    })
 }
 
 func UpdateSalesPaymentMethod(c *gin.Context){
