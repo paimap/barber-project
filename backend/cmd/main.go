@@ -48,8 +48,6 @@ func main() {
 		&models.Service{},
 		&models.ServiceType{},        
 		&models.Service_ServiceType{},  
-
-		&models.ChatHistory{},
 	)
 
 	

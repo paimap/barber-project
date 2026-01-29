@@ -75,12 +75,13 @@ func GetRevenueChart(c *gin.Context) {
     }
     // Menggunakan GROUP BY 1 (urutan kolom pertama) agar lebih aman
     config.DB.Raw(`
-        SELECT TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD') as date, 
-               SUM(price_at_sale) as total
-        FROM product_sales
-        WHERE created_at >= ?
-        GROUP BY 1
-    `, sevenDaysAgo).Scan(&productResults)
+		SELECT TO_CHAR(ps.created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD') as date, 
+			SUM(ps.price_at_sale * pps.quantity) as total
+		FROM product_sales ps
+		JOIN product_product_sales pps ON ps.id = pps.product_sales_id
+		WHERE ps.created_at >= ?
+		GROUP BY 1
+`	, sevenDaysAgo).Scan(&productResults)
 
     // 3. Query untuk Revenue Service (m)
     var serviceResults []struct {

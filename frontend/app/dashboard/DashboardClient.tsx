@@ -32,8 +32,8 @@ interface DashboardProps {
     };
     leaderboard: {
       top_outlets: Array<{ name: string; revenue: number }>;
-      top_mitras?: Array<{ name: string; revenue: number }>; // Opsional
-      top_barbers?: Array<{ name: string; revenue: number }>; // Opsional
+      top_mitras?: Array<{ name: string; revenue: number }>;
+      top_barbers?: Array<{ name: string; revenue: number }>; // Data Barber
     };
   };
 }
@@ -46,17 +46,30 @@ export default function DashboardClient({ initialData }: DashboardProps) {
     return "Rp " + (val ?? 0).toLocaleString("id-ID");
   };
 
+  // Mapping data Cabang
   const branchData = (leaderboard.top_outlets ?? []).map((item) => ({
     name: item.name,
     value: formatIDR(item.revenue),
     subtitle: "Cabang",
   }));
 
-  const partnerData = (leaderboard.top_mitras ?? []).map((item) => ({
-    name: item.name,
-    value: formatIDR(item.revenue),
-    subtitle: "Mitra",
-  }));
+  // Logika Penentuan Kolom Kedua Leaderboard (Barber vs Mitra)
+  const hasBarberData = leaderboard.top_barbers && leaderboard.top_barbers.length > 0;
+  
+  const secondaryLeaderboardData = hasBarberData 
+    ? (leaderboard.top_barbers ?? []).map((item) => ({
+        name: item.name,
+        value: formatIDR(item.revenue),
+        subtitle: "Barber",
+      }))
+    : (leaderboard.top_mitras ?? []).map((item) => ({
+        name: item.name,
+        value: formatIDR(item.revenue),
+        subtitle: "Mitra",
+      }));
+
+  const secondaryTitle = hasBarberData ? "Barber Terbaik" : "Mitra Terbaik";
+  const secondaryType = hasBarberData ? "barber" : "partner";
 
   return (
     <div className={styles.pageWrapper}>
@@ -141,10 +154,11 @@ export default function DashboardClient({ initialData }: DashboardProps) {
           type="branch"
           data={branchData}
         />
+        {/* Kolom ini akan otomatis berubah sesuai ketersediaan data top_barbers */}
         <Leaderboard
-          title="Mitra Terbaik"
-          type="partner"
-          data={partnerData}
+          title={secondaryTitle}
+          type={secondaryType}
+          data={secondaryLeaderboardData}
         />
       </div>
     </div>

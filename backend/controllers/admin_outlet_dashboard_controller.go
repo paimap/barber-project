@@ -282,3 +282,96 @@ func GetOutletTransactions(c *gin.Context) {
 		},
 	})
 }
+
+func GetBarberServiceByID(c *gin.Context) {
+    // 1. Ambil ID Barber dari parameter URL
+    barberID := c.Param("id")
+
+    // 2. Cek apakah barber tersebut ada (Opsional, untuk validasi)
+    var barber models.Barber
+    if err := config.DB.First(&barber, barberID).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "barber not found"})
+        return
+    }
+
+    var services []BarberServiceResponse
+
+    // 3. Query menggunakan Join untuk mengambil data service beserta tipe servisnya (array_agg)
+    err := config.DB.Table("services").
+        Select(`
+            services.id AS service_id,
+            services.payment_type,
+            services.price_at_sale,
+            TO_CHAR(services.created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD HH24:MI:SS') AS created_at,
+            array_agg(service_types.name) AS service_types 
+        `).
+        Joins("JOIN service_service_types sst ON sst.service_id = services.id").
+        Joins("JOIN service_types ON service_types.id = sst.service_type_id").
+        Where("services.barber_id = ?", barber.ID).
+        Where("services.deleted_at IS NULL").
+        Where("service_types.deleted_at IS NULL").
+        Where("sst.deleted_at IS NULL").
+        Group("services.id, services.payment_type, services.price_at_sale, services.created_at").
+        Order("services.created_at DESC"). // Urutkan dari yang terbaru
+        Scan(&services).Error
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil riwayat servis barber"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "status":   "success",
+        "barber_id": barber.ID,
+        "services":  services,
+    })
+}
+
+func GetBarberStatsTodayByID(c *gin.Context) {
+    db := config.DB
+    // 1. Ambil ID Barber dari parameter URL
+    barberID := c.Param("id")
+
+    // 2. Tentukan rentang waktu "Hari Ini" (00:00:00 s/d sekarang)
+    now := time.Now()
+    todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+
+    var stats BarberStatsResponse
+
+    // 3. Query Agregasi: Hitung total servis dan revenue hari ini
+    err := db.Model(&models.Service{}).
+        Select(`
+            services.barber_id, 
+            barbers.name as barber_name, 
+            COUNT(services.id) as total_service, 
+            COALESCE(SUM(services.price_at_sale), 0) as total_revenue
+        `).
+        Joins("JOIN barbers ON barbers.id = services.barber_id").
+        Where("services.barber_id = ? AND services.created_at >= ?", barberID, todayStart).
+        Group("services.barber_id, barbers.name").
+        Scan(&stats).Error
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data statistik barber"})
+        return
+    }
+
+    // 4. Penanganan jika barber belum ada servis sama sekali hari ini
+    if stats.BarberID == 0 {
+        var b models.Barber
+        if err := db.Select("id, name").First(&b, barberID).Error; err != nil {
+            c.JSON(http.StatusNotFound, gin.H{"error": "Barber tidak ditemukan"})
+            return
+        }
+        stats.BarberID = b.ID
+        stats.BarberName = b.Name
+        stats.TotalService = 0
+        stats.TotalRevenue = 0
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "status": "success",
+        "period": "today",
+        "data":   stats,
+    })
+}

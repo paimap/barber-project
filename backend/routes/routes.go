@@ -23,7 +23,8 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/me", controllers.GetCurrentUser)
 		protected.GET("/products", controllers.GetAllProduct)
 		protected.GET("/service-type", controllers.GetAllServiceType)
-
+		protected.POST("/chat", controllers.NewChatController().HandleChat)
+		protected.GET("/chat/history", controllers.NewChatController().GetChatHistory)
 	}
 
 	// routes/routes.go
@@ -55,6 +56,9 @@ func SetupRoutes(r *gin.Engine) {
 		mitra.GET("outlet/:id/chart", controllers.GetOutletRevenueChart)
 		mitra.GET("outlet/:id/distribution", controllers.GetOutletDistributions)
 		mitra.GET("outlet/:id/transactions", controllers.GetOutletTransactions)
+
+		mitra.GET("barber/:id/service", controllers.GetBarberServiceByID)
+		mitra.GET("barber/:id/summary", controllers.GetBarberStatsTodayByID)
 	}
 
 	admin := protected.Group("/admin")

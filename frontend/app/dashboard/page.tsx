@@ -44,6 +44,7 @@ async function getDashboardData(baseUrl: string) {
       leaderboard: {
         top_outlets: leaderboardJson.data?.top_outlets ?? [],
         top_mitras: leaderboardJson.data?.top_mitras ?? [],
+        top_barbers: leaderboardJson.data?.top_barbers ?? [],
       },
     };
   } catch (err) {

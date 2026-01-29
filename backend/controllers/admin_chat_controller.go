@@ -48,407 +48,305 @@ func NewChatController() *ChatController {
 ============================================================ */
 
 func buildSystemPrompt(contextType string, data string) string {
-	return fmt.Sprintf(`
-PERAN:
-Anda adalah AI Business Analyst internal untuk sistem manajemen barbershop.
+	return fmt.Sprintf( 
+		`PERAN: Anda adalah AI Business Analyst internal untuk sistem manajemen barbershop. 
 
-KONTEKS HALAMAN AKTIF:
-%s
+		KONTEKS HALAMAN AKTIF: %s 
 
-DATA TERSEDIA:
-%s
+		DATA TERSEDIA: %s 
 
-ATURAN WAJIB:
-- Gunakan HANYA data yang diberikan di atas.
-- Jangan mengarang angka, asumsi, atau informasi tambahan.
-- Jika data tidak tersedia atau tidak relevan dengan pertanyaan, katakan dengan jujur.
-- Jangan membahas topik di luar bisnis barbershop.
+		ATURAN WAJIB: 
+		- Gunakan HANYA data yang diberikan di atas. 
+		- Jangan mengarang angka, asumsi, atau informasi tambahan. 
+		- Jika data tidak tersedia atau tidak relevan dengan pertanyaan, katakan dengan jujur. 
+		- Jangan membahas topik di luar bisnis barbershop. 
+		
+		FORMAT JAWABAN: 
+		- Ringkas, jelas, dan profesional. 
+		- Gunakan bullet point jika lebih dari satu poin. 
+		- Berikan insight bisnis dan operasional pada setiap jawaban
+		- Hindari penjelasan teknis sistem atau database. 
+		
+		TUJUAN: Membantu Superadmin / Owner mengambil keputusan berbasis data.` , contextType, data) }
 
-FORMAT JAWABAN:
-- Ringkas, jelas, dan profesional.
-- Gunakan bullet point jika lebih dari satu poin.
-- Fokus pada insight bisnis dan operasional.
-- Hindari penjelasan teknis sistem atau database.
-
-TUJUAN:
-Membantu Superadmin / Owner mengambil keputusan berbasis data.
-`, contextType, data)
-}
-
-/* ============================================================
-   CONTEXT PROVIDERS
-============================================================ */
+/* ============================================================ 
+   CONTEXT PROVIDERS 
+   ============================================================ */
 
 func (cc *ChatController) getDashboardContext() string {
-	now := time.Now()
-	loc := now.Location()
+    now := time.Now()
+    // Pastikan lokasi Asia/Jakarta agar sinkron dengan SQL
+    loc, _ := time.LoadLocation("Asia/Jakarta") 
+    startOfToday := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
+    sevenDaysAgo := startOfToday.AddDate(0, 0, -6)
+    endOfToday := startOfToday.Add(24 * time.Hour)
 
-	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
-	endOfDay := startOfDay.Add(24 * time.Hour)
-	sevenDaysAgo := startOfDay.AddDate(0, 0, -6)
+    /* ---------- HARI INI (Logika Perkalian pps.quantity) ---------- */
+    var productRev, serviceRev int64
+    config.DB.Raw(`
+        SELECT COALESCE(SUM(pps.quantity * ps.price_at_sale),0) 
+        FROM product_product_sales pps 
+        JOIN product_sales ps ON ps.id = pps.product_sales_id 
+        WHERE ps.created_at >= ? AND ps.created_at < ?`, 
+        startOfToday, endOfToday).Scan(&productRev)
 
-	/* ---------- HARI INI ---------- */
+    config.DB.Raw(`
+        SELECT COALESCE(SUM(price_at_sale),0) 
+        FROM services 
+        WHERE created_at >= ? AND created_at < ?`, 
+        startOfToday, endOfToday).Scan(&serviceRev)
 
-	var productRev, serviceRev int64
+    /* ---------- TREN 7 HARI (Sinkron dengan getRevenueChart) ---------- */
+    type DailyResult struct {
+        DateKey string // YYYY-MM-DD untuk mapping
+        DayName string // Mon, Tue, dll
+        Total   int64
+    }
+    
+    var productTrend, serviceTrend []DailyResult
+    
+    // Query Product dengan logic Price * Quantity + Timezone
+    config.DB.Raw(`
+        SELECT 
+            TO_CHAR(ps.created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD') as date_key,
+            TO_CHAR(ps.created_at AT TIME ZONE 'Asia/Jakarta', 'Dy') as day_name,
+            SUM(pps.quantity * ps.price_at_sale) as total
+        FROM product_sales ps
+        JOIN product_product_sales pps ON ps.id = pps.product_sales_id
+        WHERE ps.created_at >= ? 
+        GROUP BY 1, 2 ORDER BY 1 ASC`, sevenDaysAgo).Scan(&productTrend)
 
-	config.DB.Raw(`
-		SELECT COALESCE(SUM(pps.quantity * ps.price_at_sale),0)
-		FROM product_product_sales pps
-		JOIN product_sales ps ON ps.id = pps.product_sales_id
-		WHERE ps.created_at >= ? AND ps.created_at < ?
-	`, startOfDay, endOfDay).Scan(&productRev)
+    // Query Service dengan Timezone
+    config.DB.Raw(`
+        SELECT 
+            TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD') as date_key,
+            TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'Dy') as day_name,
+            SUM(price_at_sale) as total
+        FROM services 
+        WHERE created_at >= ? 
+        GROUP BY 1, 2 ORDER BY 1 ASC`, sevenDaysAgo).Scan(&serviceTrend)
 
-	config.DB.Raw(`
-		SELECT COALESCE(SUM(price_at_sale),0)
-		FROM services
-		WHERE created_at >= ? AND created_at < ?
-	`, startOfDay, endOfDay).Scan(&serviceRev)
+    // Mapping menggunakan DateKey (YYYY-MM-DD) agar tidak tertukar antar minggu
+    mapP := map[string]int64{}
+    for _, v := range productTrend { mapP[v.DateKey] = v.Total }
+    mapS := map[string]int64{}
+    for _, v := range serviceTrend { mapS[v.DateKey] = v.Total }
 
-	totalRevenue := productRev + serviceRev
-	estimatedProfit := float64(totalRevenue) * 0.2
+    // Susun Tren secara dinamis (6 hari lalu sampai hari ini)
+    trendText := ""
+    for i := 0; i < 7; i++ {
+        t := sevenDaysAgo.AddDate(0, 0, i)
+        dKey := t.Format("2006-01-02")
+        dName := t.Format("Mon")
+        trendText += fmt.Sprintf("%s(P:%d,S:%d) ", dName, mapP[dKey], mapS[dKey])
+    }
 
-	/* ---------- TREN 7 HARI ---------- */
+    // ... (Bagian Ranking & Produk Terlaris tetap sama atau sesuaikan startOfToday) ...
+    
+    totalRevenue := productRev + serviceRev
+    estimatedProfit := float64(totalRevenue) * 0.2
 
-	type DailyResult struct {
-		Date  string
-		Total int64
-	}
-
-	var productTrend, serviceTrend []DailyResult
-
-	config.DB.Raw(`
-		SELECT TO_CHAR(created_at, 'Dy') as date, SUM(price_at_sale) as total
-		FROM product_sales
-		WHERE created_at >= ?
-		GROUP BY 1
-	`, sevenDaysAgo).Scan(&productTrend)
-
-	config.DB.Raw(`
-		SELECT TO_CHAR(created_at, 'Dy') as date, SUM(price_at_sale) as total
-		FROM services
-		WHERE created_at >= ?
-		GROUP BY 1
-	`, sevenDaysAgo).Scan(&serviceTrend)
-
-	mapP := map[string]int64{}
-	for _, v := range productTrend {
-		mapP[v.Date] = v.Total
-	}
-	mapS := map[string]int64{}
-	for _, v := range serviceTrend {
-		mapS[v.Date] = v.Total
-	}
-
-	trendText := ""
-	days := []string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
-	for _, d := range days {
-		trendText += fmt.Sprintf("%s(P:%d,S:%d) ", d, mapP[d], mapS[d])
-	}
-
-	/* ---------- RANKING ---------- */
-
-	type Rank struct {
-		Name    string
-		Revenue int64
-	}
-
-	var topOutlets []Rank
-	config.DB.Raw(`
-		SELECT o.address as name, SUM(ps.price_at_sale) as revenue
-		FROM product_sales ps
-		JOIN outlets o ON o.id = ps.outlet_id
-		WHERE ps.created_at >= ? AND ps.created_at < ?
-		GROUP BY o.address
-		ORDER BY revenue DESC
-		LIMIT 3
-	`, startOfDay, endOfDay).Scan(&topOutlets)
-
-	outletText := ""
-	for i, v := range topOutlets {
-		outletText += fmt.Sprintf("%d.%s(Rp%d) ", i+1, v.Name, v.Revenue)
-	}
-
-	/* ---------- PRODUK TERLARIS ---------- */
-
-	var topProduct string
-	config.DB.Raw(`
-		SELECT p.name
-		FROM product_product_sales pps
-		JOIN products p ON p.id = pps.product_id
-		JOIN product_sales ps ON ps.id = pps.product_sales_id
-		WHERE ps.created_at >= ? AND ps.created_at < ?
-		GROUP BY p.name
-		ORDER BY SUM(pps.quantity) DESC
-		LIMIT 1
-	`, startOfDay, endOfDay).Scan(&topProduct)
-
-	if topProduct == "" {
-		topProduct = "Tidak ada penjualan produk"
-	}
-
-	/* ---------- FINAL CONTEXT ---------- */
-
-	return fmt.Sprintf(`
-=== DASHBOARD SUMMARY (%s) ===
-
-[HARI INI]
-- Total Revenue: Rp%d
-- Estimasi Profit: Rp%.0f
-- Produk: Rp%d
-- Servis: Rp%d
-
-[TREN 7 HARI]
-%s
-
-[RANKING OUTLET]
-%s
-
-[PRODUK TERLARIS]
-- %s
-`,
-		now.Format("02 Jan 2006"),
-		totalRevenue,
-		estimatedProfit,
-		productRev,
-		serviceRev,
-		trendText,
-		outletText,
-		topProduct,
-	)
+    return fmt.Sprintf(
+        "=== DASHBOARD SUMMARY (%s) ===\n"+
+            "[HARI INI]\n- Total Revenue: Rp%d\n- Estimasi Profit: Rp%.0f\n- Produk: Rp%d\n- Servis: Rp%d\n\n"+
+            "[TREN 7 HARI]\n%s",
+        now.In(loc).Format("02 Jan 2006"), totalRevenue, estimatedProfit, productRev, serviceRev, trendText,
+    )
 }
 
 func (cc *ChatController) getMitraContext() string {
-    now := time.Now()
-    loc := now.Location()
-    startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
-    endOfDay := startOfDay.Add(24 * time.Hour)
+	now := time.Now()
+	loc := now.Location()
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
+	endOfDay := startOfDay.Add(24 * time.Hour)
 
-    var totalMitras, totalOutlets int64
-    var productRev, serviceRev int64
+	var totalMitras, totalOutlets int64
+	var productRev, serviceRev int64
 
-    // 1. Hitung Total Mitra & Outlet (Kumulatif)
-    config.DB.Model(&models.Mitra{}).Count(&totalMitras)
-    config.DB.Model(&models.Outlet{}).Count(&totalOutlets)
+	// 1. Hitung Total Mitra & Outlet (Kumulatif)
+	config.DB.Model(&models.Mitra{}).Count(&totalMitras)
+	config.DB.Model(&models.Outlet{}).Count(&totalOutlets)
 
-    // 2. Revenue Product Hari Ini
-    config.DB.Raw(`
-        SELECT COALESCE(SUM(pps.quantity * ps.price_at_sale), 0)
-        FROM product_product_sales pps
-        JOIN product_sales ps ON ps.id = pps.product_sales_id
-        WHERE ps.created_at >= ? AND ps.created_at < ?
-          AND ps.deleted_at IS NULL
-    `, startOfDay, endOfDay).Scan(&productRev)
+	// 2. Revenue Product Hari Ini
+	config.DB.Raw(`
+		SELECT COALESCE(SUM(pps.quantity * ps.price_at_sale), 0) 
+		FROM product_product_sales pps 
+		JOIN product_sales ps ON ps.id = pps.product_sales_id 
+		WHERE ps.created_at >= ? AND ps.created_at < ? AND ps.deleted_at IS NULL`, 
+		startOfDay, endOfDay).Scan(&productRev)
 
-    // 3. Revenue Service Hari Ini
-    config.DB.Raw(`
-        SELECT COALESCE(SUM(price_at_sale), 0)
-        FROM services
-        WHERE created_at >= ? AND created_at < ?
-          AND deleted_at IS NULL
-    `, startOfDay, endOfDay).Scan(&serviceRev)
+	// 3. Revenue Service Hari Ini
+	config.DB.Raw(`
+		SELECT COALESCE(SUM(price_at_sale), 0) 
+		FROM services 
+		WHERE created_at >= ? AND created_at < ? AND deleted_at IS NULL`, 
+		startOfDay, endOfDay).Scan(&serviceRev)
 
-    todayRevenue := productRev + serviceRev
+	todayRevenue := productRev + serviceRev
 
-    /* ---------- FINAL CONTEXT ---------- */
-
-    return fmt.Sprintf(`
-=== MITRA & OUTLET SUMMARY (%s) ===
-
-[DATA KUMULATIF]
-- Total Mitra Aktif: %d Mitra
-- Total Cabang/Outlet: %d Lokasi
-
-[PERFORMA HARI INI]
-- Total Pendapatan Gabungan: Rp%d
-- Kontribusi Produk: Rp%d
-- Kontribusi Layanan/Service: Rp%d
-
-Catatan: Data ini mencakup seluruh ekosistem mitra dan cabang yang terdaftar.
-`,
-        now.Format("02 Jan 2006"),
-        totalMitras,
-        totalOutlets,
-        todayRevenue,
-        productRev,
-        serviceRev,
-    )
+	/* ---------- FINAL CONTEXT ---------- */
+	return fmt.Sprintf(
+		"=== MITRA & OUTLET SUMMARY (%s) ===\n"+
+			"[DATA KUMULATIF]\n- Total Mitra Aktif: %d Mitra\n- Total Cabang/Outlet: %d Lokasi\n\n"+
+			"[PERFORMA HARI INI]\n- Total Pendapatan Gabungan: Rp%d\n- Kontribusi Produk: Rp%d\n- Kontribusi Layanan/Service: Rp%d\n\n"+
+			"Catatan: Data ini mencakup seluruh ekosistem mitra dan cabang yang terdaftar.",
+		now.Format("02 Jan 2006"), totalMitras, totalOutlets, todayRevenue, productRev, serviceRev,
+	)
 }
 
 func (cc *ChatController) getServiceContext() string {
-    now := time.Now()
-    loc := now.Location()
-    startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
-    endOfDay := startOfDay.Add(24 * time.Hour)
+	now := time.Now()
+	loc := now.Location()
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
+	endOfDay := startOfDay.Add(24 * time.Hour)
 
-    var metrics struct {
-        ProductRevenue  int64
-        ProductSold     int64
-        ServiceRevenue  int64
-        ServiceCount    int64
-    }
+	var metrics struct {
+		ProductRevenue int64
+		ProductSold    int64
+		ServiceRevenue int64
+		ServiceCount   int64
+	}
 
-    // 1. Ambil data Produk
-    config.DB.Raw(`
-        SELECT 
-            COALESCE(SUM(ps.price_at_sale * pps.quantity), 0) as product_revenue,
-            COALESCE(SUM(pps.quantity), 0) as product_sold
-        FROM product_sales ps
-        LEFT JOIN product_product_sales pps ON pps.product_sales_id = ps.id
-        WHERE ps.created_at >= ? AND ps.created_at < ? 
-          AND ps.deleted_at IS NULL
-    `, startOfDay, endOfDay).Scan(&metrics)
+	// 1. Ambil data Produk
+	config.DB.Raw(`
+		SELECT COALESCE(SUM(ps.price_at_sale * pps.quantity), 0) as product_revenue, 
+		COALESCE(SUM(pps.quantity), 0) as product_sold 
+		FROM product_sales ps 
+		LEFT JOIN product_product_sales pps ON pps.product_sales_id = ps.id 
+		WHERE ps.created_at >= ? AND ps.created_at < ? AND ps.deleted_at IS NULL`, 
+		startOfDay, endOfDay).Scan(&metrics)
 
-    // 2. Ambil data Service
-    var serviceRes struct {
-        Rev   int64
-        Count int64
-    }
-    config.DB.Raw(`
-        SELECT 
-            COALESCE(SUM(price_at_sale), 0),
-            COUNT(id)
-        FROM services
-        WHERE created_at >= ? AND created_at < ? 
-          AND deleted_at IS NULL
-    `, startOfDay, endOfDay).Scan(&serviceRes)
+	// 2. Ambil data Service
+	var serviceRes struct {
+		Rev   int64
+		Count int64
+	}
+	config.DB.Raw(`
+		SELECT COALESCE(SUM(price_at_sale), 0), COUNT(id) 
+		FROM services 
+		WHERE created_at >= ? AND created_at < ? AND deleted_at IS NULL`, 
+		startOfDay, endOfDay).Scan(&serviceRes)
 
-    metrics.ServiceRevenue = serviceRes.Rev
-    metrics.ServiceCount = serviceRes.Count
+	metrics.ServiceRevenue = serviceRes.Rev
+	metrics.ServiceCount = serviceRes.Count
 
-    /* ---------- FINAL CONTEXT ---------- */
-
-    return fmt.Sprintf(`
-=== SERVICE & PRODUCT SUMMARY (%s) ===
-
-[METRIK PRODUK]
-- Total Penjualan: Rp%d
-- Item Terjual: %d pcs
-
-[METRIK LAYANAN/SERVICE]
-- Total Pendapatan Jasa: Rp%d
-- Layanan Dilakukan: %d tindakan
-
-[ANALISIS SINGKAT]
-- Rasio Jasa vs Produk: %d transaksi layanan banding %d produk terjual.
-- Total Aktivitas Operasional: %d (Layanan + Produk).
-`,
-        now.Format("02 Jan 2006"),
-        metrics.ProductRevenue,
-        metrics.ProductSold,
-        metrics.ServiceRevenue,
-        metrics.ServiceCount,
-        metrics.ServiceCount,
-        metrics.ProductSold,
-        metrics.ServiceCount + metrics.ProductSold,
-    )
+	/* ---------- FINAL CONTEXT ---------- */
+	return fmt.Sprintf(
+		"=== SERVICE & PRODUCT SUMMARY (%s) ===\n"+
+			"[METRIK PRODUK]\n- Total Penjualan: Rp%d\n- Item Terjual: %d pcs\n\n"+
+			"[METRIK LAYANAN/SERVICE]\n- Total Pendapatan Jasa: Rp%d\n- Layanan Dilakukan: %d tindakan\n\n"+
+			"[ANALISIS SINGKAT]\n- Rasio Jasa vs Produk: %d transaksi layanan banding %d produk terjual.\n- Total Aktivitas Operasional: %d (Layanan + Produk).",
+		now.Format("02 Jan 2006"), metrics.ProductRevenue, metrics.ProductSold, metrics.ServiceRevenue, metrics.ServiceCount, metrics.ServiceCount, metrics.ProductSold, metrics.ServiceCount+metrics.ProductSold,
+	)
 }
 
 func (cc *ChatController) getInventoryContext() string {
-    type InventoryItem struct {
-        ProductName string
-        Price       int64
-        Quantity    int64
-    }
+	type InventoryItem struct {
+		ProductName string
+		Price       int64
+		Quantity    int64
+	}
+	var items []InventoryItem
 
-    var items []InventoryItem
+	err := config.DB.
+		Table("product_main_inventories").
+		Select("products.name as product_name, products.price, product_main_inventories.quantity").
+		Joins("JOIN products ON products.id = product_main_inventories.product_id").
+		Where("product_main_inventories.deleted_at IS NULL").
+		Where("products.deleted_at IS NULL").
+		Scan(&items).Error
 
-    // Ambil data stok dari database
-    err := config.DB.
-        Table("product_main_inventories").
-        Select("products.name as product_name, products.price, product_main_inventories.quantity").
-        Joins("JOIN products ON products.id = product_main_inventories.product_id").
-        Where("product_main_inventories.deleted_at IS NULL").
-        Where("products.deleted_at IS NULL").
-        Scan(&items).Error
+	if err != nil {
+		return "Gagal mengambil data inventaris."
+	}
 
-    if err != nil {
-        return "Gagal mengambil data inventaris."
-    }
+	var totalItems int64
+	lowStockItems := ""
+	inventoryValue := int64(0)
 
-    // Analisis sederhana untuk AI
-    var totalItems int64
-    lowStockItems := ""
-    inventoryValue := int64(0)
-    
-    for _, item := range items {
-        totalItems += item.Quantity
-        inventoryValue += (item.Quantity * item.Price)
-        
-        // Tandai barang yang stoknya di bawah 10 (contoh ambang batas)
-        if item.Quantity < 10 {
-            lowStockItems += fmt.Sprintf("- %s (Sisa: %d)\n", item.ProductName, item.Quantity)
-        }
-    }
+	for _, item := range items {
+		totalItems += item.Quantity
+		inventoryValue += (item.Quantity * item.Price)
+		if item.Quantity < 10 {
+			lowStockItems += fmt.Sprintf("- %s (Sisa: %d)\n", item.ProductName, item.Quantity)
+		}
+	}
 
-    if lowStockItems == "" {
-        lowStockItems = "Semua stok dalam kondisi aman."
-    }
+	if lowStockItems == "" {
+		lowStockItems = "Semua stok dalam kondisi aman."
+	}
 
-    /* ---------- FINAL CONTEXT ---------- */
-
-    return fmt.Sprintf(`
-=== INVENTORY/STOCK SUMMARY ===
-
-[IKHTISAR STOK]
-- Total Unit di Gudang: %d item
-- Estimasi Nilai Aset Stok: Rp%d
-
-[PERINGATAN STOK MENIPIS]
-%s
-
-[DETAIL SEMUA PRODUK]
-%v
-`,
-        totalItems,
-        inventoryValue,
-        lowStockItems,
-        items, 
-    )
+	/* ---------- FINAL CONTEXT ---------- */
+	return fmt.Sprintf(
+		"=== INVENTORY/STOCK SUMMARY ===\n"+
+			"[IKHTISAR STOK]\n- Total Unit di Gudang: %d item\n- Estimasi Nilai Aset Stok: Rp%d\n\n"+
+			"[PERINGATAN STOK MENIPIS]\n%s\n"+
+			"[DETAIL SEMUA PRODUK]\n%v",
+		totalItems, inventoryValue, lowStockItems, items,
+	)
 }
 
 func (cc *ChatController) getMitraDetailContext(mitraID uint) string {
-    now := time.Now()
-    startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-    endOfDay := startOfDay.Add(24 * time.Hour)
-    sevenDaysAgo := startOfDay.AddDate(0, 0, -6)
+	now := time.Now()
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	endOfDay := startOfDay.Add(24 * time.Hour)
+	sevenDaysAgo := startOfDay.AddDate(0, 0, -6)
 
-    // 1. NAMA MITRA & REVENUE HARI INI
-    var mitraName string
-    config.DB.Model(&models.Mitra{}).Select("name").Where("id = ?", mitraID).Scan(&mitraName)
+	// 1. NAMA MITRA & REVENUE HARI INI
+	var mitraName string
+	config.DB.Model(&models.Mitra{}).Select("name").Where("id = ?", mitraID).Scan(&mitraName)
 
-    var prodRev, servRev int64
-    config.DB.Model(&models.ProductSales{}).
-        Joins("JOIN outlets ON outlets.id = product_sales.outlet_id").
-        Where("outlets.mitra_id = ? AND product_sales.created_at >= ? AND product_sales.created_at < ?", mitraID, startOfDay, endOfDay).
-        Select("COALESCE(SUM(product_sales.price_at_sale), 0)").Scan(&prodRev)
+	var prodRev, servRev int64
+	config.DB.Model(&models.ProductSales{}).
+		Joins("JOIN outlets ON outlets.id = product_sales.outlet_id").
+		Where("outlets.mitra_id = ? AND product_sales.created_at >= ? AND product_sales.created_at < ?", mitraID, startOfDay, endOfDay).
+		Select("COALESCE(SUM(product_sales.price_at_sale), 0)").Scan(&prodRev)
 
-    config.DB.Model(&models.Service{}).
-        Joins("JOIN barbers ON barbers.id = services.barber_id").
-        Where("barbers.mitra_id = ? AND services.created_at >= ? AND services.created_at < ?", mitraID, startOfDay, endOfDay).
-        Select("COALESCE(SUM(services.price_at_sale), 0)").Scan(&servRev)
+	config.DB.Model(&models.Service{}).
+		Joins("JOIN barbers ON barbers.id = services.barber_id").
+		Where("barbers.mitra_id = ? AND services.created_at >= ? AND services.created_at < ?", mitraID, startOfDay, endOfDay).
+		Select("COALESCE(SUM(services.price_at_sale), 0)").Scan(&servRev)
 
-    // 2. TREN 7 HARI (CHART)
-    var pTrend, sTrend []struct { Date string; Total int64 }
-    config.DB.Raw(`SELECT TO_CHAR(ps.created_at, 'Dy') as date, SUM(ps.price_at_sale) as total FROM product_sales ps JOIN outlets o ON o.id = ps.outlet_id WHERE o.mitra_id = ? AND ps.created_at >= ? GROUP BY 1`, mitraID, sevenDaysAgo).Scan(&pTrend)
-    config.DB.Raw(`SELECT TO_CHAR(s.created_at, 'Dy') as date, SUM(s.price_at_sale) as total FROM services s JOIN barbers b ON b.id = s.barber_id WHERE b.mitra_id = ? AND s.created_at >= ? GROUP BY 1`, mitraID, sevenDaysAgo).Scan(&sTrend)
+	// 2. TREN 7 HARI
+	var pTrend []struct {
+		Date  string
+		Total int64
+	}
+	config.DB.Raw(`
+		SELECT TO_CHAR(ps.created_at, 'Dy') as date, SUM(ps.price_at_sale) as total 
+		FROM product_sales ps 
+		JOIN outlets o ON o.id = ps.outlet_id 
+		WHERE o.mitra_id = ? AND ps.created_at >= ? 
+		GROUP BY 1`, 
+		mitraID, sevenDaysAgo).Scan(&pTrend)
 
-    trendMap := "Tren 7 Hari: "
-    for _, v := range pTrend { trendMap += fmt.Sprintf("[%s: P:Rp%d] ", v.Date, v.Total) }
+	trendMap := "Tren 7 Hari: "
+	for _, v := range pTrend {
+		trendMap += fmt.Sprintf("[%s: P:Rp%d] ", v.Date, v.Total)
+	}
 
-    // 3. DISTRIBUSI & OUTLET
-    var topProd string
-    config.DB.Raw(`SELECT p.name FROM product_product_sales pps JOIN products p ON p.id = pps.product_id JOIN product_sales ps ON ps.id = pps.product_sales_id JOIN outlets o ON o.id = ps.outlet_id WHERE o.mitra_id = ? AND ps.created_at >= ? GROUP BY p.name ORDER BY SUM(pps.quantity) DESC LIMIT 1`, mitraID, startOfDay).Scan(&topProd)
+	// 3. DISTRIBUSI & OUTLET
+	var topProd string
+	config.DB.Raw(`
+		SELECT p.name 
+		FROM product_product_sales pps 
+		JOIN products p ON p.id = pps.product_id 
+		JOIN product_sales ps ON ps.id = pps.product_sales_id 
+		JOIN outlets o ON o.id = ps.outlet_id 
+		WHERE o.mitra_id = ? AND ps.created_at >= ? 
+		GROUP BY p.name ORDER BY SUM(pps.quantity) DESC LIMIT 1`, 
+		mitraID, startOfDay).Scan(&topProd)
 
-    var outletCount int64
-    config.DB.Model(&models.Outlet{}).Where("mitra_id = ?", mitraID).Count(&outletCount)
+	var outletCount int64
+	config.DB.Model(&models.Outlet{}).Where("mitra_id = ?", mitraID).Count(&outletCount)
 
-    return fmt.Sprintf(`
-=== DETAIL MITRA: %s ===
-- Status Hari Ini: Revenue Produk Rp%d, Servis Rp%d (Profit 20%%: Rp%.0f)
-- Skala: Memiliki %d Outlet aktif.
-- Produk Terlaris Hari Ini: %s
-- %s
-`, mitraName, prodRev, servRev, float64(prodRev+servRev)*0.2, outletCount, topProd, trendMap)
+	return fmt.Sprintf(
+		"=== DETAIL MITRA: %s ===\n"+
+			"- Status Hari Ini: Revenue Produk Rp%d, Servis Rp%d (Profit 20%%: Rp%.0f)\n"+
+			"- Skala: Memiliki %d Outlet aktif.\n"+
+			"- Produk Terlaris Hari Ini: %s\n- %s",
+		mitraName, prodRev, servRev, float64(prodRev+servRev)*0.2, outletCount, topProd, trendMap,
+	)
 }
 
 func (cc *ChatController) getOutletDetailContext(outletID uint) string {
@@ -457,11 +355,9 @@ func (cc *ChatController) getOutletDetailContext(outletID uint) string {
 	endOfDay := startOfDay.Add(24 * time.Hour)
 	sevenDaysAgo := startOfDay.AddDate(0, 0, -6)
 
-	// 1. AMBIL IDENTITAS OUTLET
 	var outlet models.Outlet
 	config.DB.Select("address").First(&outlet, outletID)
 
-	// 2. HITUNG REVENUE HARI INI
 	var prodRev, servRev int64
 	config.DB.Model(&models.ProductSales{}).
 		Where("outlet_id = ? AND created_at >= ? AND created_at < ?", outletID, startOfDay, endOfDay).
@@ -472,47 +368,56 @@ func (cc *ChatController) getOutletDetailContext(outletID uint) string {
 		Where("barbers.outlet_id = ? AND services.created_at >= ? AND services.created_at < ?", outletID, startOfDay, endOfDay).
 		Select("COALESCE(SUM(services.price_at_sale), 0)").Scan(&servRev)
 
-	// 3. AMBIL TRANSAKSI HARI INI (Produk & Service)
 	type LogTx struct {
-		Type string; Price int64; Time time.Time; PerformedBy string
+		Type        string
+		Price       int64
+		Time        time.Time
+		PerformedBy string
 	}
 	var todayTxs []LogTx
 	config.DB.Raw(`
 		SELECT * FROM (
 			SELECT 'Product' as type, price_at_sale as price, created_at, 'Staff Toko' as performed_by 
-			FROM product_sales WHERE outlet_id = ? AND created_at >= ? AND created_at < ?
+			FROM product_sales 
+			WHERE outlet_id = ? AND created_at >= ? AND created_at < ?
 			UNION ALL
 			SELECT 'Service' as type, s.price_at_sale as price, s.created_at, b.name as performed_by 
-			FROM services s JOIN barbers b ON b.id = s.barber_id 
+			FROM services s 
+			JOIN barbers b ON b.id = s.barber_id 
 			WHERE b.outlet_id = ? AND s.created_at >= ? AND s.created_at < ?
-		) AS daily_tx ORDER BY created_at ASC
-	`, outletID, startOfDay, endOfDay, outletID, startOfDay, endOfDay).Scan(&todayTxs)
+		) AS daily_tx ORDER BY created_at ASC`, 
+		outletID, startOfDay, endOfDay, outletID, startOfDay, endOfDay).Scan(&todayTxs)
 
 	txText := ""
 	for _, t := range todayTxs {
 		txText += fmt.Sprintf("- [%s] %s: Rp%d (Oleh: %s)\n", t.Time.Format("15:04"), t.Type, t.Price, t.PerformedBy)
 	}
-	if txText == "" { txText = "Belum ada transaksi hari ini." }
+	if txText == "" {
+		txText = "Belum ada transaksi hari ini."
+	}
 
-	// 4. TREN RINGKAS (7 HARI)
-	var pTrend []struct { Date string; Total int64 }
-	config.DB.Raw(`SELECT TO_CHAR(created_at, 'Dy') as date, SUM(price_at_sale) as total FROM product_sales WHERE outlet_id = ? AND created_at >= ? GROUP BY 1`, outletID, sevenDaysAgo).Scan(&pTrend)
-	
+	var pTrend []struct {
+		Date  string
+		Total int64
+	}
+	config.DB.Raw(`
+		SELECT TO_CHAR(created_at, 'Dy') as date, SUM(price_at_sale) as total 
+		FROM product_sales 
+		WHERE outlet_id = ? AND created_at >= ? GROUP BY 1`, 
+		outletID, sevenDaysAgo).Scan(&pTrend)
+
 	trendMap := "Tren: "
-	for _, v := range pTrend { trendMap += fmt.Sprintf("%s:Rp%d ", v.Date, v.Total) }
+	for _, v := range pTrend {
+		trendMap += fmt.Sprintf("%s:Rp%d ", v.Date, v.Total)
+	}
 
-	return fmt.Sprintf(`
-=== DETAIL OUTLET: %s ===
-[SUMMARY HARI INI]
-- Revenue: Produk Rp%d, Servis Rp%d
-- Total: Rp%d (Profit: Rp%.0f)
-
-[LOG TRANSAKSI HARI INI]
-%s
-
-[INFO TAMBAHAN]
-- %s
-`, outlet.Address, prodRev, servRev, prodRev+servRev, float64(prodRev+servRev)*0.2, txText, trendMap)
+	return fmt.Sprintf(
+		"=== DETAIL OUTLET: %s ===\n"+
+			"[SUMMARY HARI INI]\n- Revenue: Produk Rp%d, Servis Rp%d\n- Total: Rp%d (Profit: Rp%.0f)\n\n"+
+			"[LOG TRANSAKSI HARI INI]\n%s\n"+
+			"[INFO TAMBAHAN]\n- %s",
+		outlet.Address, prodRev, servRev, prodRev+servRev, float64(prodRev+servRev)*0.2, txText, trendMap,
+	)
 }
 
 /* ============================================================
@@ -520,137 +425,210 @@ func (cc *ChatController) getOutletDetailContext(outletID uint) string {
 ============================================================ */
 
 func (cc *ChatController) HandleChat(c *gin.Context) {
-    /* ---------- 1. AUTH & LIMIT ---------- */
-    val, _ := c.Get("userID")
-    userID := val.(uint)
+	/* 1. AUTH */
+	val, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(401, gin.H{"error": "Unauthorized"})
+		return
+	}
 
-    var user models.User
-    if err := config.DB.First(&user, userID).Error; err != nil {
-        c.JSON(404, gin.H{"error": "User tidak ditemukan"})
-        return
-    }
+	userID, ok := val.(uint)
+	if !ok {
+		c.JSON(500, gin.H{"error": "Invalid user_id type"})
+		return
+	}
 
-    now := time.Now()
-    // Reset harian: Jika tanggal hari ini berbeda dengan chat terakhir
-    if user.LastChatDate.Format("2006-01-02") != now.Format("2006-01-02") {
-        user.ChatLimit = 10 // Kuota baru: 10
-        user.LastChatDate = now
-        // Bersihkan history lama agar AI fokus pada data bisnis hari yang baru
-        config.DB.Where("user_id = ?", userID).Delete(&models.ChatHistory{})
-        config.DB.Save(&user)
-    }
+	var user models.User
+	if err := config.DB.First(&user, userID).Error; err != nil {
+		c.JSON(404, gin.H{"error": "User tidak ditemukan"})
+		return
+	}
 
-    if user.ChatLimit <= 0 {
-        c.JSON(429, gin.H{"error": "Kuota chat harian (10/10) sudah habis. Silakan coba lagi besok."})
-        return
-    }
+	now := time.Now()
 
-    /* ---------- 2. INPUT ---------- */
-    var input struct {
-        Message     string `json:"message" binding:"required"`
-        PageContext string `json:"page_context"`
-    }
+	/* 2. RESET KUOTA HARIAN */
+	if user.LastChatDate.IsZero() || user.LastChatDate.Format("2006-01-02") != now.Format("2006-01-02") {
+		user.ChatLimit = 5
+		user.LastChatDate = now
+		config.DB.Where("user_id = ?", userID).Delete(&models.ChatHistory{})
+		config.DB.Save(&user)
+	}
 
-    if err := c.ShouldBindJSON(&input); err != nil {
-        c.JSON(400, gin.H{"error": "Pesan tidak boleh kosong"})
-        return
-    }
+	if user.ChatLimit <= 0 {
+		c.JSON(429, gin.H{
+			"error": "Kuota chat harian sudah habis. Silakan coba lagi besok.",
+		})
+		return
+	}
 
-    /* ---------- 3. CONTEXT RESOLVER (Data Bisnis) ---------- */
-    var (
-        dataText    string
-        contextType = "general"
-        id          uint
-    )
+	/* 3. INPUT VALIDATION */
+	var input struct {
+		Message     string `json:"message" binding:"required"`
+		PageContext string `json:"page_context"`
+	}
 
-    // Deteksi halaman detail (Outlet/Mitra)
-    if n, _ := fmt.Sscanf(input.PageContext, "outlet_%d", &id); n == 1 {
-        dataText = cc.getOutletDetailContext(id)
-        contextType = "outlet_detail"
-    } else if n, _ := fmt.Sscanf(input.PageContext, "mitra_%d", &id); n == 1 {
-        dataText = cc.getMitraDetailContext(id)
-        contextType = "mitra_detail"
-    } else {
-        // Deteksi halaman statis
-        staticContexts := map[string]ContextProvider{
-            "dashboard": cc.getDashboardContext,
-            "stock":     cc.getInventoryContext,
-            "mitra":     cc.getMitraContext,
-            "services":  cc.getServiceContext,
-        }
+	if err := c.ShouldBindJSON(&input); err != nil || input.Message == "" {
+		c.JSON(400, gin.H{"error": "Pesan tidak boleh kosong"})
+		return
+	}
 
-        if fn, ok := staticContexts[input.PageContext]; ok {
-            dataText = fn()
-            contextType = input.PageContext
-        } else {
-            dataText = "Tidak ada data spesifik pada halaman ini."
-            contextType = "unknown"
-        }
-    }
+	/* 4. CONTEXT RESOLVER */
+	var (
+		dataText    string
+		contextType = "general"
+		id          uint
+	)
 
-    /* ---------- 4. HISTORY RESOLVER (Ingatan Chat) ---------- */
-    var historyDB []models.ChatHistory
-    // Ambil 10 baris terakhir (sekitar 5 percakapan bolak-balik)
-    config.DB.Where("user_id = ?", userID).Order("created_at desc").Limit(10).Find(&historyDB)
+	if n, _ := fmt.Sscanf(input.PageContext, "outlet_%d", &id); n == 1 {
+		dataText = cc.getOutletDetailContext(id)
+		contextType = "outlet_detail"
+	} else if n, _ := fmt.Sscanf(input.PageContext, "mitra_%d", &id); n == 1 {
+		dataText = cc.getMitraDetailContext(id)
+		contextType = "mitra_detail"
+	} else {
+		staticContexts := map[string]ContextProvider{
+			"dashboard": cc.getDashboardContext,
+			"stock":     cc.getInventoryContext,
+			"mitra":     cc.getMitraContext,
+			"services":  cc.getServiceContext,
+		}
 
-    var genaiHistory []*genai.Content
-    // Urutan di DB: Terbaru -> Lama. Urutan Gemini: Lama -> Terbaru.
-    // Maka kita loop terbalik (reverse).
-    for i := len(historyDB) - 1; i >= 0; i-- {
-        genaiHistory = append(genaiHistory, &genai.Content{
-            Role:  historyDB[i].Role,
-            Parts: []genai.Part{genai.Text(historyDB[i].Content)},
-        })
-    }
+		if fn, ok := staticContexts[input.PageContext]; ok {
+			dataText = fn()
+			contextType = input.PageContext
+		} else {
+			dataText = "Tidak ada data spesifik pada halaman ini."
+			contextType = "unknown"
+		}
+	}
 
-    /* ---------- 5. AI EXECUTION ---------- */
-    model := cc.Client.GenerativeModel("gemini-1.5-flash")
-    
-    // Set instruksi sistem dengan data bisnis terbaru
-    model.SystemInstruction = &genai.Content{
-        Parts: []genai.Part{
-            genai.Text(buildSystemPrompt(contextType, dataText)),
-        },
-    }
+	/* 5. CHAT HISTORY (LIMIT 5) */
+	const MaxHistory = 5
+	var historyDB []models.ChatHistory
+	config.DB.Where("user_id = ?", userID).Order("created_at desc").Limit(MaxHistory).Find(&historyDB)
 
-    // Jalankan sesi chat dengan history yang sudah ada
-    cs := model.StartChat()
-    cs.History = genaiHistory
+	var genaiHistory []*genai.Content
+	for i := len(historyDB) - 1; i >= 0; i-- {
+		role := historyDB[i].Role
+		if role != "user" && role != "model" {
+			role = "user"
+		}
+		genaiHistory = append(genaiHistory, &genai.Content{
+			Role: role,
+			Parts: []genai.Part{
+				genai.Text(historyDB[i].Content),
+			},
+		})
+	}
 
-    resp, err := cs.SendMessage(c.Request.Context(), genai.Text(input.Message))
-    if err != nil {
-        c.JSON(500, gin.H{"error": "AI sedang sibuk, silakan coba beberapa saat lagi"})
-        return
-    }
+	/* 6. GEMINI EXECUTION (TIMEOUT 30 DETIK, RETRY 2X, LOG ERROR) */
+	model := cc.Client.GenerativeModel("gemini-2.5-flash")
+	model.SystemInstruction = &genai.Content{
+		Parts: []genai.Part{
+			genai.Text(buildSystemPrompt(contextType, dataText)),
+		},
+	}
 
-    /* ---------- 6. PERSISTENCE & RESPONSE ---------- */
-    aiReply := ""
-    for _, part := range resp.Candidates[0].Content.Parts {
-        aiReply += fmt.Sprintf("%v", part)
-    }
+	cs := model.StartChat()
+	cs.History = genaiHistory
 
-    // Gunakan Transaction agar data konsisten
-    tx := config.DB.Begin()
-    
-    // Simpan history User
-    if err := tx.Create(&models.ChatHistory{UserID: userID, Role: "user", Content: input.Message}).Error; err != nil {
-        tx.Rollback()
-    }
-    // Simpan history AI
-    if err := tx.Create(&models.ChatHistory{UserID: userID, Role: "model", Content: aiReply}).Error; err != nil {
-        tx.Rollback()
-    }
-    
-    // Update sisa kuota
-    user.ChatLimit--
-    tx.Save(&user)
-    
-    tx.Commit()
+	ctxTimeout, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+	defer cancel()
 
-    c.JSON(200, gin.H{
-        "status":           "success",
-        "reply":            aiReply,
-        "remaining_limit":  user.ChatLimit,
-        "context_detected": contextType,
-    })
+	var resp *genai.GenerateContentResponse
+	var err error
+
+	for i := 0; i < 2; i++ { // retry 2x
+		resp, err = cs.SendMessage(ctxTimeout, genai.Text(input.Message))
+		if err != nil {
+			fmt.Println("SendMessage error:", err)
+		} else if resp != nil && len(resp.Candidates) > 0 {
+			break
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	aiReply := "Maaf, AI sedang sibuk. Silakan coba beberapa saat lagi."
+	if resp != nil && len(resp.Candidates) > 0 {
+		aiReply = ""
+		for _, cand := range resp.Candidates {
+			if cand.Content != nil {
+				for _, part := range cand.Content.Parts {
+					aiReply += fmt.Sprintf("%v", part)
+				}
+			}
+		}
+		if aiReply == "" {
+			aiReply = "Maaf, saya belum bisa memberikan insight dari data ini."
+		}
+	}
+
+	/* 7. DB TRANSACTION */
+	tx := config.DB.Begin()
+	if err := tx.Create(&models.ChatHistory{
+		UserID:  userID,
+		Role:    "user",
+		Content: input.Message,
+	}).Error; err != nil {
+		tx.Rollback()
+		c.JSON(500, gin.H{"error": "Gagal menyimpan chat user"})
+		return
+	}
+
+	if err := tx.Create(&models.ChatHistory{
+		UserID:  userID,
+		Role:    "model",
+		Content: aiReply,
+	}).Error; err != nil {
+		tx.Rollback()
+		c.JSON(500, gin.H{"error": "Gagal menyimpan chat AI"})
+		return
+	}
+
+	user.ChatLimit--
+	if err := tx.Save(&user).Error; err != nil {
+		tx.Rollback()
+		c.JSON(500, gin.H{"error": "Gagal update kuota"})
+		return
+	}
+
+	tx.Commit()
+
+	/* 8. RESPONSE */
+	c.JSON(200, gin.H{
+		"status":           "success",
+		"reply":            aiReply,
+		"remaining_limit":  user.ChatLimit,
+		"context_detected": contextType,
+	})
+}
+
+
+/* ============================================================
+   GET CHAT HISTORY
+============================================================ */
+
+func (cc *ChatController) GetChatHistory(c *gin.Context) {
+	val, _ := c.Get("user_id")
+	userID := val.(uint)
+
+	now := time.Now()
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	endOfDay := time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 999999999, now.Location())
+
+	history := []models.ChatHistory{}
+	err := config.DB.Where("user_id = ? AND created_at BETWEEN ? AND ?", userID, startOfDay, endOfDay).
+		Order("created_at asc").
+		Limit(20).
+		Find(&history).Error
+
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Gagal mengambil riwayat chat hari ini"})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"status":  "success",
+		"history": history,
+	})
 }

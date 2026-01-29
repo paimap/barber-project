@@ -24,7 +24,7 @@ func GetMitraSummaryByID(c *gin.Context) {
         ProductRevenue int64  `json:"product_revenue"`
         ServiceRevenue int64  `json:"service_revenue"`
         TotalRevenue   int64  `json:"total_revenue"`
-        Profit         int64  `json:"profit"`
+        Profit         int64  `json:"profit_20"`
     }
 
     var result RevenueResult
@@ -39,10 +39,11 @@ func GetMitraSummaryByID(c *gin.Context) {
 
     // 2. Hitung Product Revenue via Outlets (Hanya Hari Ini)
     var prodRev int64
-    err := db.Model(&models.ProductSales{}).
+    err := db.Model(&models.Product_ProductSales{}). // Gunakan model junction
+        Joins("JOIN product_sales ON product_sales.id = product_product_sales.product_sales_id").
         Joins("JOIN outlets ON outlets.id = product_sales.outlet_id").
         Where("outlets.mitra_id = ? AND product_sales.created_at >= ?", mitraID, beginningOfDay).
-        Select("COALESCE(SUM(product_sales.price_at_sale), 0)").
+        Select("COALESCE(SUM(product_product_sales.quantity * product_sales.price_at_sale), 0)").
         Scan(&prodRev).Error
 
     if err != nil {
@@ -93,8 +94,9 @@ func GetMitraRevenueChart(c *gin.Context) {
     }
     config.DB.Raw(`
         SELECT TO_CHAR(ps.created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD') as date, 
-               SUM(ps.price_at_sale) as total
+            SUM(pps.quantity * ps.price_at_sale) as total
         FROM product_sales ps
+        JOIN product_product_sales pps ON pps.product_sales_id = ps.id
         JOIN outlets o ON o.id = ps.outlet_id
         WHERE o.mitra_id = ? AND ps.created_at >= ?
         GROUP BY 1

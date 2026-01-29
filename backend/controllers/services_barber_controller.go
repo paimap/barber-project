@@ -125,6 +125,7 @@ func GetBarberService(c *gin.Context) {
         Where("service_types.deleted_at IS NULL").
         Where("sst.deleted_at IS NULL").
         Group("services.id, services.payment_type, services.price_at_sale"). 
+		Order("services.created_at DESC").
         Scan(&services).Error
 
 	if err != nil {
